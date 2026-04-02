@@ -1,0 +1,18 @@
+{
+  "agent_id": "mysql-example",
+  "updated_at": "2026-03-25T17:41:19.956303+00:00",
+  "tables_mentioned": {
+    "Dica": 2,
+    "Projeto": 14,
+    "Empresa": 17,
+    "Ambiente": 3,
+    "BancoDeDados": 3
+  },
+  "aliases_used": {},
+  "intents": {
+    "V2_SELECT_JOIN": 4,
+    "V2_SELECT": 10,
+    "V2_COUNT": 4,
+    "SEMANTIC_COUNT": 17
+  }
+}

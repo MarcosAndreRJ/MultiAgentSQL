@@ -1,0 +1,121 @@
+# Agent: MySQL Example Specialist
+# Vinculado a um banco de dados MySQL específico.
+# Executor técnico assistido com acesso operacional completo ao banco configurado.
+
+id: mysql-example
+name: "Agente MySQL - Exemplo"
+description: "Agente especialista vinculado ao banco de dados de exemplo. Pode executar consultas, DDL, DML, procedures, triggers, views e gerar mock data."
+type: mysql-specialist
+
+# Modelo Ollama
+# model: "qwen3.5:4b"
+provider: "ollama"
+model: "minimax-m2.7:cloud"
+timeout_seconds: 30
+base_url: "https://api.ollama.com"
+
+
+
+# Arquivo de prompt base (relativo a config/prompts/)
+prompt_file: "mysql-specialist.md"
+
+# Skills associadas (relativo a config/skills/)
+skills:
+  - "mysql-defaults"
+  - "ddl-rules"
+  - "mockdata-defaults"
+
+# Configuração do banco de dados
+database:
+  host: "192.168.0.5"
+  port: 3306
+  name: "xqxcom46_devhacks"
+  user: "root"
+  password: "root"
+  # Timeout de conexão em segundos
+  connect_timeout: 10
+  # Pool de conexões
+  pool_size: 3
+
+# Permissões
+permissions:
+  can_read_db: true
+  can_write_db: true
+  can_ddl: true
+  can_execute: true
+  # Tabelas protegidas (nunca serão alvo de DROP/TRUNCATE direto)
+  protected_tables: []
+
+# Configurações de guard
+guards:
+  # Sempre exige confirmação para essas operações
+  require_confirmation_for:
+    - "DELETE"
+    - "DROP"
+    - "TRUNCATE"
+    - "UPDATE_WITHOUT_WHERE"
+    - "ALTER_DESTRUCTIVE"
+  # Executa automaticamente sem confirmação (apenas LOW risk)
+  auto_approve:
+    - "SELECT"
+    - "SHOW"
+    - "DESCRIBE"
+    - "EXPLAIN"
+
+# Comportamento
+behavior:
+  max_loop_steps: 5
+  response_style: "technical"
+  language: "pt-BR"
+  # Limitar resultados de SELECT
+  max_result_rows: 500
+  # Introspectar bank antes de DDL
+  introspect_before_ddl: true
+
+# ── Provider LLM (opcional) ───────────────────────────────────────────────────
+# Se omitido, usa Ollama com o campo 'model' acima (retrocompatível).
+#
+# Exemplos de configuração:
+#
+# Apenas Ollama (padrão retrocompatível, equivalente a omitir esta seção):
+# llm:
+#   provider: "ollama"
+#   model: "qwen3.5:9b"
+#   timeout_seconds: 120
+#
+# Apenas Gemini (requer GEMINI_API_KEY no .env):
+# llm:
+#   provider: "gemini"
+#   model: "gemini-2.0-flash-lite"
+#   timeout_seconds: 30
+#
+# Ollama como primário, Gemini como fallback:
+# llm:
+#   provider: "ollama"
+#   model: "qwen3.5:9b"
+#   fallback_provider: "gemini"
+#   fallback_model: "gemini-2.0-flash-lite"
+#   timeout_seconds: 120
+#
+# Gemini como primário, Ollama como fallback:
+# llm:
+#   provider: "gemini"
+#   model: "gemini-2.0-flash-lite"
+#   fallback_provider: "ollama"
+#   fallback_model: "qwen3.5:9b"
+#   timeout_seconds: 30
+
+# Ativado com Gemini + fallback Ollama (descomente para usar):
+# llm:
+#   provider: "gemini"
+#   model: "gemini-2.0-flash-lite"
+#   fallback_provider: "ollama"
+#   fallback_model: "qwen3.5:9b"
+#   timeout_seconds: 30
+
+# Exemplo para usar Ollama Cloud / Proxy / Groq
+# provider: "ollama"
+# model: "llama3-70b"
+# base_url: "https://api.ollama.com" # ou o endpoint do seu cloud
+# api_key: "fba5d158eab14241863d1d24a171b5f9..." # chave opcional
+

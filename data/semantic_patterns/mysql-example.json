@@ -1,0 +1,242 @@
+[
+  {
+    "id": "ptn_e8085ca39e3e",
+    "agent_id": "mysql-example",
+    "created_at": "2026-03-24T16:24:31.781663",
+    "updated_at": "2026-03-24T16:24:31.781666",
+    "last_used_at": "2026-03-24T16:24:31.781667",
+    "usage_count": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "intent_family": "SELECT",
+    "mode": "select",
+    "tables": [
+      "Projeto"
+    ],
+    "join_path": null,
+    "filters": [
+      {
+        "field": "idProjeto",
+        "op": "=",
+        "slot_name": "p0",
+        "slot_value": 40
+      }
+    ],
+    "order_by": [],
+    "limit": null,
+    "sql_template": "SELECT * FROM `Projeto` WHERE `Projeto`.`idProjeto` = %(p0)s LIMIT 50",
+    "examples": [
+      {
+        "user_message": "Execute: Select Descrição from Projeto where idProjeto = 40",
+        "slot_values": {
+          "p0": 40
+        }
+      }
+    ]
+  },
+  {
+    "id": "ptn_98e1d59f1896",
+    "agent_id": "mysql-example",
+    "created_at": "2026-03-24T16:24:57.692523",
+    "updated_at": "2026-03-24T16:25:07.562579",
+    "last_used_at": "2026-03-24T16:24:57.692525",
+    "usage_count": 2,
+    "success_count": 2,
+    "failure_count": 0,
+    "intent_family": "SELECT",
+    "mode": "select",
+    "tables": [
+      "Projeto"
+    ],
+    "join_path": null,
+    "filters": [
+      {
+        "field": "Status",
+        "op": "=",
+        "slot_name": "p0",
+        "slot_value": "Entregue"
+      }
+    ],
+    "order_by": [],
+    "limit": null,
+    "sql_template": "SELECT * FROM `Projeto` WHERE `Projeto`.`Status` = %(p0)s LIMIT 50",
+    "examples": [
+      {
+        "user_message": "Execute: Select Descrição from Projeto where Status = Entregue",
+        "slot_values": {
+          "p0": "Entregue"
+        }
+      },
+      {
+        "user_message": "Execute: Select Descrição from Projeto where Status = Suspenso",
+        "slot_values": {
+          "p0": "Suspenso"
+        }
+      }
+    ]
+  },
+  {
+    "id": "ptn_fab174b22f77",
+    "agent_id": "mysql-example",
+    "created_at": "2026-03-24T16:27:02.599865",
+    "updated_at": "2026-03-25T09:03:42.804535",
+    "last_used_at": "2026-03-25T09:02:40.915227",
+    "usage_count": 17,
+    "success_count": 17,
+    "failure_count": 0,
+    "intent_family": "COUNT",
+    "mode": "count",
+    "tables": [
+      "Empresa"
+    ],
+    "join_path": null,
+    "filters": [],
+    "order_by": [],
+    "limit": null,
+    "sql_template": "SELECT COUNT(*) AS total FROM `Empresa`",
+    "examples": [
+      {
+        "user_message": "Quantos projetos foram desenvolvidos para a empresa \"Runtec\"?",
+        "slot_values": {}
+      },
+      {
+        "user_message": "Quantos registros tem Empresa",
+        "slot_values": {}
+      }
+    ]
+  },
+  {
+    "id": "ptn_2c44a1d18da8",
+    "agent_id": "mysql-example",
+    "created_at": "2026-03-24T16:31:03.354660",
+    "updated_at": "2026-03-25T08:58:57.892565",
+    "last_used_at": "2026-03-25T08:58:35.848836",
+    "usage_count": 4,
+    "success_count": 4,
+    "failure_count": 0,
+    "intent_family": "COUNT",
+    "mode": "count",
+    "tables": [
+      "Projeto"
+    ],
+    "join_path": null,
+    "filters": [],
+    "order_by": [],
+    "limit": null,
+    "sql_template": "SELECT COUNT(*) AS total FROM `Projeto`",
+    "examples": [
+      {
+        "user_message": "Quantos Projeto temos pendentes?",
+        "slot_values": {}
+      },
+      {
+        "user_message": "Qual a qtd de registro de Projeto",
+        "slot_values": {}
+      }
+    ]
+  },
+  {
+    "id": "ptn_404d55efd28c",
+    "agent_id": "mysql-example",
+    "created_at": "2026-03-24T19:18:20.350261",
+    "updated_at": "2026-03-24T21:31:51.927725",
+    "last_used_at": "2026-03-24T19:18:20.350267",
+    "usage_count": 3,
+    "success_count": 3,
+    "failure_count": 0,
+    "intent_family": "SELECT_JOIN",
+    "mode": "select_join",
+    "tables": [
+      "Ambiente",
+      "BancoDeDados"
+    ],
+    "join_path": {
+      "left_table": "Ambiente",
+      "left_col": "idBancoDeDados",
+      "right_table": "BancoDeDados",
+      "right_col": "idBancoDeDados"
+    },
+    "filters": [],
+    "order_by": [],
+    "limit": null,
+    "sql_template": "SELECT `Ambiente`.*, `BancoDeDados`.*\nFROM `Ambiente`\nINNER JOIN `BancoDeDados` ON `Ambiente`.`idBancoDeDados` = `BancoDeDados`.`idBancoDeDados`\nLIMIT 50",
+    "examples": [
+      {
+        "user_message": "Liste os registros de Ambiente fazendo relacionamento com BancoDeDados e mostrando o nome do banco",
+        "slot_values": {}
+      },
+      {
+        "user_message": "quais os Ambiente do BancoDeDados \"SAT\"?",
+        "slot_values": {}
+      },
+      {
+        "user_message": "quais os Ambiente do BancoDeDados comtítulo SAT?",
+        "slot_values": {}
+      }
+    ]
+  },
+  {
+    "id": "ptn_8d9cc2208f6d",
+    "agent_id": "mysql-example",
+    "created_at": "2026-03-25T13:11:06.466785",
+    "updated_at": "2026-03-25T13:11:06.466788",
+    "last_used_at": "2026-03-25T13:11:06.466789",
+    "usage_count": 1,
+    "success_count": 1,
+    "failure_count": 0,
+    "intent_family": "SELECT",
+    "mode": "select",
+    "tables": [
+      "Dica"
+    ],
+    "join_path": null,
+    "filters": [],
+    "order_by": [],
+    "limit": null,
+    "sql_template": "SELECT * FROM `Dica` LIMIT 50",
+    "examples": [
+      {
+        "user_message": "Liste todas as Dica com iddicalinguagem = \"typescript\"",
+        "slot_values": {}
+      }
+    ]
+  },
+  {
+    "id": "ptn_35872ace73e0",
+    "agent_id": "mysql-example",
+    "created_at": "2026-03-25T14:32:21.378511",
+    "updated_at": "2026-03-25T14:41:19.956852",
+    "last_used_at": "2026-03-25T14:32:21.378516",
+    "usage_count": 6,
+    "success_count": 6,
+    "failure_count": 0,
+    "intent_family": "SELECT",
+    "mode": "select",
+    "tables": [
+      "Projeto"
+    ],
+    "join_path": null,
+    "filters": [],
+    "order_by": [],
+    "limit": null,
+    "sql_template": "SELECT * FROM `Projeto` LIMIT 50",
+    "examples": [
+      {
+        "user_message": "Qual a data de início do Projeto P4343",
+        "slot_values": {}
+      },
+      {
+        "user_message": "Liste projeto onde titulo liek \"4143\"",
+        "slot_values": {}
+      },
+      {
+        "user_message": "Qual a data de início do projeto 4101?",
+        "slot_values": {}
+      },
+      {
+        "user_message": "Qual a data de início do projeto 4014?",
+        "slot_values": {}
+      }
+    ]
+  }
+]

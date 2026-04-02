@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MultiAgent SQL — Estrutura ERD</title>
+  <link rel="stylesheet" href="/static/diagram.css">
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+<body>
+  <div class="diagram-layout">
+
+    <header class="diagram-header">
+      <div class="header-main">
+        <h1>Visualização Estrutural — ERD</h1>
+        <div class="meta-line">
+          <span id="meta-agent">Agente: -</span>
+          <span id="meta-db">Database: -</span>
+          <span id="meta-generated">Digest: -</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-back" class="header-btn">← Voltar</button>
+      </div>
+    </header>
+
+    <section class="diagram-toolbar">
+      <div class="toolbar-group">
+        <input id="search-table" type="text" placeholder="Buscar tabela..." autocomplete="off">
+        <button id="btn-search">Buscar</button>
+        <button id="btn-clear-selection">Limpar seleção</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btn-zoom-in">Zoom +</button>
+        <button id="btn-zoom-out">Zoom −</button>
+        <button id="btn-fit">Fit to screen</button>
+        <button id="btn-relayout">Reorganizar layout</button>
+        <button id="btn-center">Centralizar selecionada</button>
+        <button id="btn-new-frame" class="header-btn">框 Nova Moldura</button>
+        <button id="btn-new-table" class="btn-new-table">＋ Nova Tabela</button>
+      </div>
+      <div class="toolbar-group toggles">
+        <label><input type="checkbox" id="toggle-related-only"> Mostrar só relacionadas da selecionada</label>
+        <label><input type="checkbox" id="toggle-hide-isolated"> Esconder sem relacionamento</label>
+      </div>
+    </section>
+
+    <!-- Legenda visual do ERD -->
+    <div class="diagram-legend">
+      <label class="legend-item legend-filter">
+        <input type="checkbox" id="toggle-show-tables" checked>
+        <div class="legend-swatch table"></div>
+        <span>Tabela</span>
+      </label>
+      <span class="legend-sep">·</span>
+      <label class="legend-item legend-filter">
+        <input type="checkbox" id="toggle-show-views" checked>
+        <div class="legend-swatch view"></div>
+        <span>View</span>
+      </label>
+      <span class="legend-sep">·</span>
+      <label class="legend-item legend-filter">
+        <input type="checkbox" id="toggle-show-drafts" checked>
+        <div class="legend-swatch draft"></div>
+        <span>Rascunho</span>
+      </label>
+      <span class="legend-sep">·</span>
+      <div class="legend-item">
+        <div class="legend-line fk"></div>
+        <span>FK (chave estrangeira)</span>
+      </div>
+      <span class="legend-sep">·</span>
+      <span style="font-size:10px;color:#4a698a">Duplo clique = colapsar/expandir colunas</span>
+    </div>
+
+    <section id="diagram-status" class="diagram-status">Carregando diagrama...</section>
+
+    <main class="diagram-main">
+      <aside class="diagram-sidepanel">
+        <div class="panel-title">Objeto Selecionado</div>
+        <div id="selected-table" class="panel-content">Nenhum objeto selecionado.</div>
+        <div class="panel-title">Resumo</div>
+        <div id="diagram-summary" class="panel-content">-</div>
+        <div class="panel-title">Dica</div>
+        <div class="panel-content" style="color:var(--text-muted)">
+          Arraste para mover. Scroll para zoom.<br>
+          Duplo clique para colapsar colunas.<br>
+          Posições são salvas automaticamente.
+        </div>
+      </aside>
+      <div id="diagram-canvas" class="diagram-canvas"></div>
+    </main>
+
+  </div>
+
+  <!-- ── Modal: Nova Moldura ──────────────────────────────────────────────── -->
+  <div id="modal-frame" class="modal-overlay" hidden>
+    <div class="modal-box small-modal">
+      <div class="modal-header">
+        <span class="modal-title" id="frame-modal-title-text">Configurar Moldura</span>
+        <button class="modal-close" id="btn-frame-modal-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label class="form-label">Título do Grupo</label>
+          <input id="frame-title" type="text" class="form-input" placeholder="ex: Módulo Financeiro" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Cor de Fundo</label>
+          <select id="frame-color" class="form-select">
+            <option value="rgba(100, 149, 237, 0.15)">Azul Suave</option>
+            <option value="rgba(144, 238, 144, 0.15)">Verde Suave</option>
+            <option value="rgba(255, 182, 193, 0.15)">Rosa Suave</option>
+            <option value="rgba(255, 215, 0, 0.15)">Dourado Suave</option>
+            <option value="rgba(200, 200, 200, 0.15)">Cinza Suave</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-delete-frame" class="btn-delete" style="margin-right:auto">Excluir</button>
+          <button id="btn-save-frame" class="btn-primary">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Nova Tabela ──────────────────────────────────────────────── -->
+  <div id="modal-new-table" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <div class="modal-header">
+        <span class="modal-title">Nova Tabela</span>
+        <button class="modal-close" id="btn-modal-close" title="Fechar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <label class="form-label">Nome da tabela</label>
+          <input id="new-table-name" type="text" class="form-input" placeholder="ex: pedidos" autocomplete="off">
+        </div>
+
+        <div class="columns-header">
+          <span class="form-label">Colunas</span>
+          <button id="btn-add-column" class="btn-small">+ Adicionar coluna</button>
+        </div>
+
+        <div id="columns-list" class="columns-list">
+          <!-- linhas de colunas geradas via JS -->
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-add-to-erd" class="btn-erd-only">Criar só no ERD</button>
+          <button id="btn-generate-sql" class="btn-primary">Gerar SQL</button>
+          <button id="btn-execute-ddl" class="btn-execute" disabled>Executar no banco</button>
+        </div>
+
+        <div id="sql-preview-wrap" class="sql-preview-wrap" hidden>
+          <div class="form-label">SQL gerado</div>
+          <pre id="sql-preview" class="sql-preview"></pre>
+          <div id="ddl-result" class="ddl-result" hidden></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/diagram.js"></script>
+</body>
+</html>

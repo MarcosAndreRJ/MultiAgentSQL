@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Architect</title>
+  <link rel="stylesheet" href="/public/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+</head>
+
+<body x-data="chatApp()" x-init="init()">
+
+  <aside class="col-agents">
+    <div class="agents-header">
+      <span class="logo-icon">&#x26a1;</span>
+      <span class="logo-text">Agent Architect</span>
+    </div>
+    <div class="agents-list">
+      <template x-for="ag in agents" :key="ag.id">
+        <div class="agent-item" :class="{ active: activeAgent === ag.id }" @click="switchAgent(ag.id)" role="button"
+          tabindex="0" @keydown.enter.prevent="switchAgent(ag.id)">
+          <div class="agent-item-avatar" x-text="ag.id === 'main' ? '🧠' : '🤖'"
+            style="background:transparent; font-size:20px;"></div>
+          <div class="agent-item-info">
+            <div class="agent-item-name" x-text="ag.name"></div>
+            <div class="agent-item-sub" x-text="ag.id === 'main' ? 'Principal' : 'Especialista'"></div>
+          </div>
+          <button class="agent-delete-btn" x-show="ag.id !== 'main'"
+                  @click.stop="deleteAgent(ag.id)" title="Excluir agente">&#x2715;</button>
+        </div>
+      </template>
+    </div>
+    <div class="agents-footer">
+      <button class="btn-new-agent" @click="showNewAgent = true">
+        + Novo agente
+      </button>
+    </div>
+  </aside>
+
+  <!-- MODAL NOVO AGENTE -->
+  <div class="modal-overlay" x-show="showNewAgent" style="display: none;" @click.self="showNewAgent = false">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Configurações do Agente</h3>
+        <button type="button" @click="showNewAgent = false; newAgentName = ''; newAgentPrompt = ''"
+          class="btn-close-modal">&#x2715;</button>
+      </div>
+      <form @submit.prevent="createAgent()">
+        <div class="modal-body">
+          <label>NOME DO AGENTE</label>
+          <input x-model="newAgentName" class="input-cfg" placeholder="Ex: Canvas AI" required />
+
+          <label style="margin-top: 15px;">PROMPT DE INSTRUÇÕES</label>
+          <textarea x-model="newAgentPrompt" class="input-cfg" rows="4"
+            placeholder="Descreva como o agente deve se comportar..."></textarea>
+          <div class="modal-hint">Este prompt define como o agente irá se comportar durante as interações no chat.</div>
+
+          <label style="margin-top: 15px;">ARQUIVOS DE ESPECIALIDADE (OPCIONAL)</label>
+          <input type="file" multiple @change="newAgentFiles = Array.from($event.target.files)" class="input-cfg"
+            accept=".md,.txt,.json,.csv" />
+          <div class="modal-hint">Faça o upload de bases de conhecimento.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel"
+            @click="showNewAgent = false; newAgentName = ''; newAgentPrompt = ''; newAgentFiles = []">Cancelar</button>
+          <button type="submit" class="btn-save-modal">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL SKILLS -->
+  <div class="modal-overlay" x-show="showSkillsModal" style="display: none;" @click.self="showSkillsModal = false">
+    <div class="modal-content" style="max-width: 760px; width: 95%;">
+      <div class="modal-header">
+        <h3>Skills</h3>
+        <button type="button" @click="showSkillsModal = false" class="btn-close-modal">&#x2715;</button>
+      </div>
+      <div class="modal-body" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <label>SKILLS CADASTRADAS</label>
+          <div style="max-height:280px; overflow:auto; border:1px solid var(--border); border-radius:10px; padding:8px;">
+            <template x-for="s in skills" :key="s.name">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 4px; border-bottom:1px dashed var(--border);">
+                <div>
+                  <div style="font-weight:600;" x-text="s.name"></div>
+                  <div style="font-size:11px; color:var(--muted);" x-text="s.updatedAt || ''"></div>
+                </div>
+                <div style="display:flex; gap:6px;">
+                  <button class="cmd-btn" @click="selectSkill(s.name)">Selecionar</button>
+                  <button class="cmd-btn" @click="editSkill(s.name)">Editar</button>
+                  <button class="cmd-btn danger" @click="deleteSkill(s.name)">Excluir</button>
+                </div>
+              </div>
+            </template>
+            <div x-show="skills.length === 0" style="color:var(--muted); font-size:12px;">Sem skills cadastradas.</div>
+          </div>
+          <div style="margin-top:8px; font-size:12px;">Selecionada: <strong x-text="selectedSkillName || 'nenhuma'"></strong></div>
+          <button class="cmd-btn" style="margin-top:8px;" @click="assignSelectedSkillToCurrentAgent()" :disabled="!selectedSkillName">Atribuir ao agente atual</button>
+
+          <label style="margin-top:12px; display:block;">SKILLS DO AGENTE ATUAL</label>
+          <div style="max-height:170px; overflow:auto; border:1px solid var(--border); border-radius:10px; padding:8px;">
+            <template x-for="s in assignedSkillsCurrentAgent" :key="s.name">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 4px; border-bottom:1px dashed var(--border);">
+                <div style="font-weight:600;" x-text="s.name"></div>
+                <button class="cmd-btn danger" @click="removeSkillFromCurrentAgent(s.name)">Remover</button>
+              </div>
+            </template>
+            <div x-show="assignedSkillsCurrentAgent.length === 0" style="color:var(--muted); font-size:12px;">Nenhuma skill atribuida.</div>
+          </div>
+        </div>
+
+        <form @submit.prevent="createSkillFromModal()">
+          <label>NOME DA SKILL</label>
+          <input x-model="newSkillName" class="input-cfg" placeholder="ex: dba-mysql-playbook" required />
+          <label style="margin-top:10px;">CONTEUDO (SKILL.md)</label>
+          <textarea x-model="newSkillContent" class="input-cfg" rows="11" placeholder="Descreva instrucoes da skill..." required></textarea>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button type="submit" class="btn-save-modal">Criar/Atualizar</button>
+            <button type="button" class="btn-cancel" @click="newSkillName=''; newSkillContent=''">Limpar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-chat">
+    <header class="chat-header">
+      <div class="chat-header-info">
+        <div class="agent-avatar-lg" x-text="activeAgent === 'main' ? '🧠' : '🤖'"
+          style="background:transparent; font-size:26px;"></div>
+        <div>
+          <div class="agent-name" x-text="currentAgentName"></div>
+          <div class="agent-status">
+            <span class="status-dot" :class="{ active: connected }"></span>
+            <span x-text="connected ? 'Online' : 'Conectando...'"></span>
+          </div>
+        </div>
+      </div>
+        <div class="header-commands">
+          <button class="cmd-btn" @click="sendCommand('/reset')">&#x21ba; Reset</button>
+          <button class="cmd-btn danger" @click="sendCommand('/stop')">&#x23f9; Stop</button>
+          <button class="cmd-btn" @click="openSkillsModal()">&#x1f9e0; Skills</button>
+          <button class="cmd-btn" @click="assignSelectedSkillToCurrentAgent()" :disabled="!selectedSkillName">Atribuir skill</button>
+          
+          <!-- Botão Detalhes do Agente (Sliders) -->
+          <button class="cmd-btn" style="width:34px; padding:0; display:inline-flex; align-items:center; justify-content:center;" 
+                  @click="openCurrentAgentDetails()" title="Detalhes do Agente">
+            <svg stroke="currentColor" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" height="15" width="15">
+              <line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line>
+              <line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line>
+              <line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line>
+              <line x1="17" y1="16" x2="23" y2="16"></line>
+            </svg>
+          </button>
+
+          <button class="cmd-btn" style="font-size:16px; width:34px; padding:0"
+            @click="toggleConfigPanel()" title="Configurações globais">&#x2699;</button>
+        </div>
+    </header>
+
+    <section class="messages" id="messages">
+      <div x-show="currentMessages.length === 0" class="empty-state">
+        <div class="empty-icon">&#x1f4ac;</div>
+        <div>Inicie uma conversa com <strong x-text="currentAgentName"></strong></div>
+        <div class="empty-hint">Comandos: <code>/reset</code> &middot; <code>/stop</code> &middot;
+          <code>/delete &lt;agente&gt;</code></div>
+      </div>
+
+      <template x-for="msg in currentMessages" :key="msg.id">
+        <div class="msg-row" :class="msg.role === 'step' ? 'system' : msg.role">
+          <div class="avatar-sm" x-show="msg.role === 'assistant'"
+            x-text="msg.agentName === 'Principal' ? '🧠' : (msg.agentName ? '🤖' : (activeAgent === 'main' ? '🧠' : '🤖'))"
+            style="background:transparent; font-size:20px;"></div>
+          <div class="avatar-sm sys" x-show="msg.role === 'system' || msg.role === 'step'">&#x2699;</div>
+          
+          <div class="bubble" :class="msg.role === 'step' ? 'step-bubble' : msg.role">
+            
+            <!-- Etapas do Sistema (Planner, Specialist, Reviewer) -->
+            <template x-if="msg.role === 'step'">
+              <div class="assistant-step">
+                <div class="step-title" @click="msg.open = !msg.open" style="cursor:pointer; display:flex; align-items:center; gap:6px; font-weight:600; color:var(--ink);">
+                  <span x-text="msg.stepInfo.title"></span>
+                  <span style="margin-left:auto; font-size:10px; color:var(--muted)" x-show="msg.stepInfo.status !== 'loading'" x-text="msg.open ? '▼' : '▶'"></span>
+                </div>
+                
+                <div class="step-loading" x-show="msg.stepInfo.status === 'loading'" style="display:flex; align-items:center; gap:8px; margin-top:6px; color:var(--muted); font-size:12px; font-style:italic;">
+                  <span class="spinner"></span> Carregando...
+                </div>
+                
+                <div class="step-content markdown" x-show="msg.open && msg.stepInfo.status !== 'loading'" x-html="renderMd(msg.text)" style="margin-top:8px; font-size:12px; color:var(--muted); background:var(--bg); padding:10px; border-radius:6px; max-height:300px; overflow-y:auto; border: 1px solid var(--border);">
+                </div>
+              </div>
+            </template>
+
+            <!-- Assistente Final (Markdown) -->
+            <div class="assistant-final markdown" x-show="msg.role === 'assistant' && msg.text" x-html="renderMd(msg.text)"></div>
+            <!-- Usuário ou Mensagens de Sistema antigas -->
+            <div class="bubble-content" x-show="msg.role !== 'assistant' && msg.role !== 'step'" x-text="msg.text"></div>
+            
+            <div class="bubble-footer" x-show="msg.role !== 'step'">
+              <div class="bubble-meta" x-show="msg.role === 'assistant' || msg.role === 'user'">
+                <span x-show="msg.role === 'assistant' && msg.modelUsed" x-text="'[' + msg.modelUsed + ']'"></span>
+                <span x-text="msg.time"></span>
+              </div>
+              <button class="copy-btn" x-show="msg.role !== 'system' && msg.text" @click="copyMessage(msg.text, msg.id)"
+                :class="{ copied: copiedId === msg.id }" :title="copiedId === msg.id ? 'Copiado!' : 'Copiar'">
+                <span x-show="copiedId !== msg.id">&#x2398;</span>
+                <span x-show="copiedId === msg.id">&#x2713;</span>
+              </button>
+            </div>
+          </div>
+          <div class="avatar-sm user" x-show="msg.role === 'user'">V</div>
+        </div>
+      </template>
+
+      <div class="msg-row assistant" x-show="thinkingAgents[activeAgent]">
+        <div class="avatar-sm" x-text="activeAgent === 'main' ? '🧠' : '🤖'"
+          style="background:transparent; font-size:20px;"></div>
+        <div class="bubble assistant typing">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+      </div>
+    </section>
+
+    <form class="composer" @submit.prevent="send()">
+      <input type="file" multiple x-ref="chatFileInput" @change="chatFiles.push(...Array.from($event.target.files))"
+        style="display: none;" />
+      <div style="display: flex; flex-direction: column; flex: 1; gap: 4px;">
+        <div x-show="chatFiles.length > 0" style="display: flex; gap: 6px; flex-wrap: wrap; padding: 0 4px 4px;">
+          <template x-for="(f, i) in chatFiles" :key="i">
+            <div
+              style="background: rgba(99,91,255,.08); border: 1px solid rgba(99,91,255,.2); border-radius: 20px; padding: 2px 10px; font-size: 11px; display: flex; align-items: center; gap: 6px; color: var(--accent);">
+              <span>&#128206;</span>
+              <span x-text="f.name"></span>
+              <button type="button" @click="chatFiles.splice(i, 1)"
+                style="background: transparent; border: none; cursor: pointer; font-size: 13px; color: var(--muted); line-height: 1;">&times;</button>
+            </div>
+          </template>
+        </div>
+        <textarea x-model="input" placeholder="Digite sua mensagem... (Enter envia | /reset /stop /delete)" rows="1"
+          @keydown.enter="if (!$event.shiftKey && !$event.ctrlKey) { $event.preventDefault(); send(); }"
+          @input="autoResize($event)" :disabled="thinking"></textarea>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+        <button type="button" @click="$refs.chatFileInput.click()" :disabled="thinking"
+          style="background: none; border: none; cursor: pointer; padding: 4px; border-radius: 8px; font-size: 20px; color: var(--muted); display: flex; align-items: center;"
+          title="Anexar arquivo">&#128206;</button>
+        <button type="submit" class="btn-send" :disabled="(!input.trim() && chatFiles.length === 0) || thinking">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="icon-send">
+            <path
+              d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"
+              fill="currentColor" />
+          </svg>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <aside class="col-config" x-show="showRightPanel" :class="{ 'hidden': !showRightPanel }" x-transition>
+
+    <!-- GLOBAL CONFIG MODE -->
+    <template x-if="rightPanelMode === 'config'">
+      <div style="display:flex; flex-direction:column; height:100%;">
+        <div class="config-panel-header">
+          &#x2699; Configura&ccedil;&otilde;es
+          <button @click="showRightPanel = false"
+            style="float:right; background:none; border:none; cursor:pointer; color:var(--muted)">&#x2715;</button>
+        </div>
+        <form class="config-form" @submit.prevent="saveConfig()">
+          <div class="config-section-title">AI Engine</div>
+          <div class="config-field">
+            <label>Provedor LLM</label>
+            <select x-model="cfg.ollamaProvider" class="input-cfg">
+              <option value="ollama">Ollama (Local)</option>
+            </select>
+          </div>
+          <div class="config-field">
+            <label>Ollama Base URL</label>
+            <input x-model="cfg.ollamaBaseUrl" class="input-cfg" placeholder="http://host.docker.internal:11434" />
+          </div>
+          <div class="config-field">
+            <label>Modelo</label>
+            <input x-model="cfg.ollamaModel" class="input-cfg" placeholder="llama3.1:8b" />
+          </div>
+          <div class="config-section-title" style="margin-top:18px">Telegram</div>
+          <div class="config-field">
+            <label>Bot Token</label>
+            <input x-model="cfg.telegramBotToken" class="input-cfg" type="password" placeholder="Bot Token"
+              autocomplete="off" />
+          </div>
+          <div class="config-field">
+            <label>User ID Permitido</label>
+            <input x-model="cfg.telegramAllowedUser" class="input-cfg" placeholder="123456789" />
+          </div>
+          <div class="config-section-title" style="margin-top:18px">Interface</div>
+          <div class="config-toggle">
+            <span>Telegram ativo</span>
+            <label class="toggle-switch">
+              <input type="checkbox" x-model="cfg.enableTelegram" />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="config-toggle">
+            <span>Web Chat ativo</span>
+            <label class="toggle-switch">
+              <input type="checkbox" x-model="cfg.enableWebChat" />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="config-toggle">
+            <span>Fluxo de Pensamento</span>
+            <label class="toggle-switch" title="Mostra os passos internos de cada Agente">
+              <input type="checkbox" x-model="cfg.showThoughtFlow" />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="config-toggle">
+            <span>Máquina de Escrever</span>
+            <label class="toggle-switch" title="Digita a resposta letra por letra na revisão (Stream)">
+              <input type="checkbox" x-model="cfg.typewriterEffect" />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <button type="submit" class="btn-save" :disabled="cfgSaving">
+            <span
+              x-text="cfgSaving ? 'Salvando...' : cfgSaved ? 'Salvo!' : 'Salvar Configura&ccedil;&otilde;es'"></span>
+          </button>
+          <div class="config-note">
+            Altera&ccedil;&otilde;es de token Telegram requerem reinicio do container.
+          </div>
+        </form>
+      </div>
+    </template>
+
+    <!-- AGENT DETAILS MODE -->
+    <template x-if="rightPanelMode === 'agentDetails' && editAgentData">
+      <div style="display:flex; flex-direction:column; height:100%;">
+        <div class="config-panel-header" style="display:flex; align-items:center; gap:8px;">
+          <button @click="rightPanelMode = 'config'"
+            style="background:none; border:none; cursor:pointer; color:var(--muted); font-size:16px;">&#8592;</button>
+          <div style="flex:1;">Detalhes do Agente</div>
+          <button @click="showRightPanel = false"
+            style="background:none; border:none; cursor:pointer; color:var(--muted)">&#x2715;</button>
+        </div>
+        <form class="config-form" @submit.prevent="saveAgentDetails()">
+          <div class="config-section-title">Identificação</div>
+          <div class="config-field">
+            <label>NOME</label>
+            <input x-model="editAgentData.name" class="input-cfg" required :disabled="editAgentData.id === 'main'" />
+          </div>
+          <div class="config-section-title" style="margin-top:18px">Instruções</div>
+          <div class="config-field">
+            <label>CUSTOM PROMPT</label>
+            <textarea x-model="editAgentData.description" class="input-cfg" rows="12" placeholder="Defina o comportamento do agente..."></textarea>
+          </div>
+          <div class="config-field">
+            <label>Modelo LLM</label>
+            <input type="text" x-model="editAgentData.llmModel" class="input-cfg" placeholder="Deixe em branco para usar o modelo padrão" />
+          </div>
+          <button type="submit" class="btn-save" :disabled="editAgentSaving" style="margin-top:auto;">
+            <span x-text="editAgentSaving ? 'Salvando...' : 'Salvar Agente'"></span>
+          </button>
+        </form>
+      </div>
+    </template>
+
+  </aside>
+
+  <script src="/public/chat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.0/dist/cdn.min.js"></script>
+</body>
+
+</html>

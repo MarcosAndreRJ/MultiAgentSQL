@@ -1,0 +1,40 @@
+# Agent: Principal (Generalista)
+# Não vinculado a nenhum banco de dados.
+# Serve para explicações técnicas, revisão de SQL, arquitetura, sugestões e apoio conceitual.
+
+id: principal
+name: "Agente Principal"
+description: "Agente generalista para suporte técnico, revisão de SQL e orientação sobre banco de dados. Não executa operações reais."
+type: principal
+
+# Modelo Ollama
+model: "llama3.2"
+
+# Arquivo de prompt base (relativo a config/prompts/)
+prompt_file: "principal.md"
+
+# Skills associadas (relativo a config/skills/)
+skills:
+  - "mysql-defaults"
+  - "ddl-rules"
+
+# Sem database para o agente principal
+database: null
+
+# Permissões
+permissions:
+  can_read_db: false
+  can_write_db: false
+  can_ddl: false
+  can_execute: false
+
+# Configurações de guard
+guards:
+  require_confirmation_for: []
+  auto_approve: []
+
+# Comportamento
+behavior:
+  max_loop_steps: 3
+  response_style: "technical"
+  language: "pt-BR"

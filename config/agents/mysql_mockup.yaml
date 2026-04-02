@@ -1,0 +1,65 @@
+
+id: mysql-mockup
+name: "Agente MySQL - Mockup"
+description: "Agente especialista vinculado ao banco de dados de mockup. Pode executar consultas, DDL, DML, procedures, triggers, views e gerar mock data."
+type: mysql-specialist
+
+# Modelo Ollama
+model: "llama3.2"
+
+# Arquivo de prompt base (relativo a config/prompts/)
+prompt_file: "mysql-mockup.md"
+
+# Skills associadas (relativo a config/skills/)
+skills:
+  - "mysql-defaults"
+  - "ddl-rules"
+  - "mockdata-defaults"
+
+# Configuração do banco de dados
+database:
+  host: "192.168.0.5"
+  port: 3306
+  name: "devhacks_site"
+  user: "root"
+  password: "root"
+  # Timeout de conexão em segundos
+  connect_timeout: 10
+  # Pool de conexões
+  pool_size: 3
+
+# Permissões
+permissions:
+  can_read_db: true
+  can_write_db: true
+  can_ddl: true
+  can_execute: true
+  # Tabelas protegidas (nunca serão alvo de DROP/TRUNCATE direto)
+  protected_tables: []
+
+# Configurações de guard
+guards:
+  # Sempre exige confirmação para essas operações
+  require_confirmation_for:
+    - "DELETE"
+    - "DROP"
+    - "TRUNCATE"
+    - "UPDATE_WITHOUT_WHERE"
+    - "ALTER_DESTRUCTIVE"
+  # Executa automaticamente sem confirmação (apenas LOW risk)
+  auto_approve:
+    - "INSERT"
+    - "SELECT"
+    - "SHOW"
+    - "DESCRIBE"
+    - "EXPLAIN"
+
+# Comportamento
+behavior:
+  max_loop_steps: 5
+  response_style: "technical"
+  language: "pt-BR"
+  # Limitar resultados de SELECT
+  max_result_rows: 500
+  # Introspectar bank antes de DDL
+  introspect_before_ddl: true
