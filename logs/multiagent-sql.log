@@ -63823,3 +63823,198 @@ Responda APENAS o JSON, sem nenhum texto antes ou depois.
 2026-04-01 21:43:44 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
 2026-04-01 21:43:45 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
 2026-04-01 22:11:42 | INFO     | multiagent-sql.diagram_service | [DIAGRAM] Payload montado | agente=mysql-example | nodes=86 | edges=86 | drafts=0
+2026-04-02 09:24:06 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:24:06 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:24:06 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:24:06 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:24:06 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:24:13 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:24:13 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:51:49 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:51:49 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:51:49 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:51:53 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:51:53 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:51:53 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:51:54 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:51:54 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:51:58 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:51:58 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:51:58 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:51:58 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:51:58 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:52:03 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:03 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:52:03 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:03 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:03 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:07 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:52:07 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:52:08 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:52:08 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:52:08 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:52:12 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:12 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:52:12 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:12 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:12 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:17 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:52:17 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:52:18 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:52:18 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:52:19 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:52:23 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:23 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:52:23 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:23 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:23 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:28 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:52:28 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:52:28 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:52:28 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:52:28 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:52:31 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:31 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:52:31 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:31 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:31 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:36 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:52:36 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:52:37 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:52:37 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:52:37 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:52:41 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:41 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:52:41 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:41 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:41 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:45 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:52:45 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:52:46 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:52:46 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:52:46 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:52:49 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:49 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:52:49 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:49 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:49 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:51 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:51 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:52:51 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:51 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:51 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:54 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:52:54 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:52:55 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:52:55 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:52:55 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:52:55 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:52:55 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:52:55 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:52:55 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:52:55 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:52:58 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:58 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:52:58 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:52:58 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:52:58 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:53:02 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:53:02 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:53:04 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:53:04 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:53:04 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:53:09 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:53:09 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:53:09 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:53:09 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:53:09 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:53:16 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:53:16 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:53:16 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:53:16 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:53:16 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:53:26 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:53:26 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:53:26 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:53:26 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:53:26 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:53:32 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:53:32 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 09:53:36 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 09:53:36 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 09:53:36 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 09:54:26 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:54:26 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 09:54:26 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 09:54:26 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:54:27 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 09:54:36 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 09:54:37 | ERROR    | multiagent-sql.db.session | Erro ao inicializar banco de dados: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:03:52 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 10:03:52 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 10:03:52 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 10:03:52 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 10:03:52 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 10:03:56 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 10:03:56 | ERROR    | multiagent-sql.db.session | Erro ao inicializar banco de dados: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:04:10 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 10:04:10 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 10:04:10 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 10:04:10 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 10:04:10 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 10:04:14 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 10:04:14 | ERROR    | multiagent-sql.db.session | Erro ao inicializar banco de dados: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:04:14 | ERROR    | multiagent-sql.app | Falha na conexão inicial com MySQL: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:04:14 | WARNING  | multiagent-sql.app | O dashboard poderá apresentar erros de dados, mas o chat continuará operando via fallback.
+2026-04-02 10:04:14 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 10:08:41 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:08:42 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:08:46 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:08:48 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:09:40 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:09:40 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:10:00 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 10:10:00 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-02 10:10:00 | INFO     | multiagent-sql.app | ============================================================
+2026-04-02 10:10:00 | INFO     | multiagent-sql.agent_registry | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 10:10:00 | INFO     | multiagent-sql.app | Agentes carregados: ['mysql-example', 'mysql-mockup', 'principal']
+2026-04-02 10:10:04 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-02 10:10:04 | ERROR    | multiagent-sql.db.session | Erro ao inicializar banco de dados: (mysql.connector.errors.ProgrammingError) 1049 (42000): Unknown database 'MultiAgent'
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:10:04 | ERROR    | multiagent-sql.app | Falha na conexão inicial com MySQL: (mysql.connector.errors.ProgrammingError) 1049 (42000): Unknown database 'MultiAgent'
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:10:04 | WARNING  | multiagent-sql.app | O dashboard poderá apresentar erros de dados, mas o chat continuará operando via fallback.
+2026-04-02 10:10:04 | INFO     | multiagent-sql.app | MultiAgent SQL - Runtime pronto!
+2026-04-02 10:10:04 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-02 10:10:04 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-02 10:10:04 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-02 10:10:11 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:10:11 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:10:41 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:10:41 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:11:11 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:11:11 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:11:41 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:11:41 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:12:11 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-02 10:12:11 | ERROR    | multiagent-sql.services.health | Erro no health do banco: (mysql.connector.errors.ProgrammingError) 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+(Background on this error at: https://sqlalche.me/e/20/f405)

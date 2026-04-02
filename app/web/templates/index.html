@@ -1,137 +1,117 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MultiAgent SQL</title>
-<link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Architect — MultiAgentSQL</title>
+  <meta name="description" content="Dashboard administrativo e operacional do MultiAgentSQL. Gerencie agentes, providers de LLM, modelos e monitore a saúde do sistema." />
+
+  <!-- CSS Modular -->
+  <link rel="stylesheet" href="/public/css/base.css" />
+  <link rel="stylesheet" href="/public/css/layout.css" />
+  <link rel="stylesheet" href="/public/css/components.css" />
+  <link rel="stylesheet" href="/public/css/workspace.css" />
+
+  <!-- Marked.js para markdown no chat -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
 </head>
 <body>
-<div class="layout">
 
-  <!-- Sidebar: Agentes -->
-  <aside class="sidebar" id="sidebar">
+<div id="app">
+
+  <!-- ═══════════════════════════════════════════════════════
+       SIDEBAR ESQUERDA (Permanente)
+  ═══════════════════════════════════════════════════════ -->
+  <aside id="sidebar">
+
+    <!-- Logo -->
     <div class="sidebar-header">
-      <div class="logo">
-        <span class="logo-icon">⚡</span>
-        <span class="logo-title">MultiAgent SQL</span>
-      </div>
-      <div class="ollama-status" id="ollamaStatus">Carregando...</div>
+      <span class="sidebar-logo-icon">⚡</span>
+      <span class="sidebar-logo-text">Agent Architect</span>
+      <span class="sidebar-logo-version">v2</span>
     </div>
-    <div class="sidebar-section">
-      <div class="section-title">AGENTES</div>
-      <div id="agentList" class="agent-list">
-        <div class="loading">Carregando agentes...</div>
-      </div>
+
+    <!-- Navegação gerada pelo sidebar.js -->
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <!-- Preenchido dinamicamente por /js/components/sidebar.js -->
+    </nav>
+
+    <!-- Footer da sidebar -->
+    <div class="sidebar-footer">
+      <button class="nav-item" id="btn-settings" style="width:100%;">
+        <span class="nav-icon">⚙️</span>
+        <span>Configurações</span>
+      </button>
     </div>
-    <div class="sidebar-section">
-      <div class="section-title">AÇÕES PENDENTES</div>
-      <div id="pendingList" class="pending-list">
-        <div class="empty-state">Nenhuma ação pendente</div>
-      </div>
-    </div>
+
   </aside>
 
-  <!-- Main: Chat -->
-  <main class="chat-area" id="chatArea">
-    <div class="chat-header" id="chatHeader">
-      <div class="no-agent-selected">
-        <span>Selecione um agente para começar</span>
-      </div>
-    </div>
-
-    <div class="messages" id="messages">
-      <div class="welcome-message">
-        <div class="welcome-icon">🤖</div>
-        <h2>MultiAgent SQL</h2>
-        <p>Selecione um agente na barra lateral para começar a conversa.</p>
-        <p class="subtitle">Agentes especialistas podem executar SQL, inspecionar schema e gerar mock data.</p>
-      </div>
-    </div>
-
-    <div class="input-area" id="inputArea">
-      <div id="attachmentsViewer" class="attachments-viewer"></div>
-      <div class="input-wrapper">
-        <button id="attachBtn" class="attach-btn" title="Anexar arquivo" disabled>
-          <svg viewBox="0 0 24 24" fill="none" class="icon-clip" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-        </button>
-        <textarea
-          id="messageInput"
-          placeholder="Selecione um agente primeiro..."
-          disabled
-          rows="1"
-        ></textarea>
-        <button id="sendBtn" class="send-btn" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-        </button>
-      </div>
-      <input type="file" id="fileAttachment" multiple accept=".txt,.md,.json,.csv,.log" style="display:none">
-      <div class="input-hints" id="inputHints">Selecione um agente para interagir</div>
+  <!-- ═══════════════════════════════════════════════════════
+       ÁREA CENTRAL — Muda conforme a rota
+  ═══════════════════════════════════════════════════════ -->
+  <main id="main-content">
+    <!-- Preenchido dinamicamente pelo router em /js/app.js -->
+    <div class="empty-state" style="margin:auto;">
+      <span class="spinner"></span>
+      <span class="text-muted">Inicializando...</span>
     </div>
   </main>
 
-  <!-- Right Panel: Info do Agente -->
-  <aside class="info-panel" id="infoPanel">
-    <div class="info-header">
-      <span>Detalhes do Agente</span>
-      <button id="refreshAgentsBtn" class="btn-refresh" title="Recarregar agentes do YAML">
-        <span class="icon">🔄</span> Atualizar
-      </button>
-    </div>
-    <div id="agentDetail" class="agent-detail">
-      <div class="empty-state">Nenhum agente selecionado</div>
-    </div>
-    <div class="info-footer">
-      <hr>
-      <div class="settings-item">
-        <label class="checkbox-container">
-          <input type="checkbox" id="showEventsToggle" checked>
-          <span class="checkmark"></span>
-          Mostrar eventos de progresso
-        </label>
-      </div>
+  <!-- ═══════════════════════════════════════════════════════
+       RIGHT PANEL — Contexto da view ativa
+  ═══════════════════════════════════════════════════════ -->
+  <aside id="right-panel" class="collapsed">
+    <div id="right-panel-content">
+      <!-- Preenchido dinamicamente pelas páginas -->
     </div>
   </aside>
 
-</div>
+</div><!-- /#app -->
 
-<!-- Modal de Confirmação -->
-<div class="modal-overlay" id="confirmModal" style="display:none">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title-group">
-        <span class="modal-icon">⚠️</span>
-        <h3>Confirmar Ação de Alto Risco</h3>
-      </div>
-    </div>
-    <div class="modal-body" id="confirmBody"></div>
-    <div class="modal-footer">
-      <button class="btn-danger" id="confirmYes">Confirmar</button>
-      <button class="btn-cancel" id="confirmNo">Cancelar</button>
-    </div>
-  </div>
-</div>
+<!-- ═══════════════════════════════════════════════════════
+     TEMPLATES HTML NATIVOS (sem JS no markup)
+     Usados via cloneTemplate() do dom.js
+═══════════════════════════════════════════════════════ -->
 
-<!-- Modal de Detalhes do Registro -->
-<div class="modal-overlay" id="recordDetailModal" style="display:none">
-  <div class="modal modal-record-detail">
-    <div class="modal-header">
-      <div class="modal-title-group">
-        <span class="modal-icon">📄</span>
-        <h3>Detalhes do Registro</h3>
-      </div>
-      <button class="modal-close" onclick="closeRecordModal()">&times;</button>
-    </div>
-    <div class="modal-body" id="recordDetailBody">
-      <!-- Conteúdo dinâmico via JS -->
-      <div class="record-details-grid" id="recordDetailsGrid"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeRecordModal()">Fechar</button>
-    </div>
-  </div>
-</div>
+<!-- Template: linha de tabela de Provider -->
+<template id="tpl-provider-row">
+  <tr>
+    <td class="col-name"></td>
+    <td class="col-url text-mono" style="font-size:11px;color:var(--ink-2)"></td>
+    <td class="col-status"></td>
+    <td class="col-actions">
+      <button class="btn btn-sm btn-secondary btn-test">Testar</button>
+      <button class="btn btn-sm btn-secondary btn-edit">Editar</button>
+      <button class="btn btn-sm btn-danger btn-delete">Excluir</button>
+    </td>
+  </tr>
+</template>
 
-<script src="/static/app.js"></script>
+<!-- Template: linha de tabela de Model -->
+<template id="tpl-model-row">
+  <tr>
+    <td class="col-model-name text-mono"></td>
+    <td class="col-provider"></td>
+    <td class="col-context" style="font-size:11px;color:var(--ink-2)"></td>
+    <td class="col-tools"></td>
+  </tr>
+</template>
+
+<!-- Template: linha de tabela de Agent -->
+<template id="tpl-agent-row">
+  <tr>
+    <td class="col-agent-id text-mono" style="font-size:11px;"></td>
+    <td class="col-agent-name"></td>
+    <td class="col-agent-model" style="font-size:11px;color:var(--ink-2)"></td>
+    <td class="col-actions">
+      <button class="btn btn-sm btn-secondary btn-edit">Editar</button>
+      <button class="btn btn-sm btn-danger btn-delete">Excluir</button>
+    </td>
+  </tr>
+</template>
+
+<!-- Ponto de entrada ESM -->
+<script type="module" src="/public/js/app.js"></script>
+
 </body>
 </html>

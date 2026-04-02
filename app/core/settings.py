@@ -54,6 +54,13 @@ class Settings(BaseSettings):
     # ── Database Defaults ─────────────────────────────────
     DB_MAX_RESULT_ROWS: int = 500
 
+    # ── MySQL Connection ─────────────────────────────────
+    MYSQL_HOST: str = "localhost"
+    MYSQL_PORT: int = 3306
+    MYSQL_DATABASE: str = "MultiAgent"
+    MYSQL_USER: str = "root"
+    MYSQL_PASSWORD: str = "root"
+
     # ── Derived paths (computed, not env vars) ────────────
     @property
     def agents_config_path(self) -> Path:
@@ -94,6 +101,12 @@ class Settings(BaseSettings):
     @property
     def cache_path(self) -> Path:
         return Path(self.DATA_DIR) / "cache"
+
+    @property
+    def database_url(self) -> str:
+        """Retorna a URL de conexão MySQL para o SQLAlchemy."""
+        # Suporta mysql-connector-python conforme requirements.txt
+        return f"mysql+mysqlconnector://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"
 
 
 # Instância global de settings

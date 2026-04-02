@@ -12,6 +12,8 @@ from fastapi.staticfiles import StaticFiles
 from app.core import agent_registry
 from app.core.logger import get_logger
 from app.tools.db_connection_manager import close_all
+from app.db.session import init_db, SessionLocal
+from app.services.dashboard import providers_service, models_service
 
 logger = get_logger("app")
 
@@ -37,6 +39,19 @@ async def lifespan(app: FastAPI):
             logger.warning(f"Ollama não disponível: {msg}")
     except Exception as exc:
         logger.warning(f"Não foi possível verificar Ollama: {exc}")
+
+    # Inicializar Banco de Dados e Bootstrap (Resiliente)
+    try:
+        init_db()
+        db = SessionLocal()
+        try:
+            await providers_service.bootstrap_providers(db)
+            await models_service.bootstrap_models(db)
+        finally:
+            db.close()
+    except Exception as db_exc:
+        logger.error(f"Falha na conexão inicial com MySQL: {db_exc}")
+        logger.warning("O dashboard poderá apresentar erros de dados, mas o chat continuará operando via fallback.")
 
     logger.info("MultiAgent SQL - Runtime pronto!")
     yield
@@ -71,6 +86,10 @@ from app.api.routes_execution import router as execution_router
 from app.api.routes_pending import router as pending_router
 from app.api.routes_skills import router as skills_router
 from app.api.routes_upload import router as upload_router
+from app.api.routes_providers import router as providers_router
+from app.api.routes_models import router as models_router
+from app.api.routes_health import router as health_router
+from app.api.routes_config import router as config_router
 
 app.include_router(agents_router)
 app.include_router(chat_router)
@@ -82,10 +101,23 @@ app.include_router(aliases_router)
 app.include_router(upload_router)
 app.include_router(diagram_router)
 
+# Rotas de Dashboard
+app.include_router(providers_router)
+app.include_router(models_router)
+app.include_router(health_router)
+app.include_router(config_router)
 
+
+# Serve os assets do dashboard modular (CSS, JS, downloads)
+public_dir = Path(__file__).parent.parent / "public"
+if public_dir.exists():
+    app.mount("/public", StaticFiles(directory=str(public_dir)), name="public")
+
+# Serve assets legados do app/web/static (manter compatibilidade)
 static_dir = Path(__file__).parent / "web" / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 
 
 @app.get("/health")
