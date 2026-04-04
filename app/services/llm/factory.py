@@ -2,7 +2,9 @@
 LLM Provider Factory — Cria o provider correto a partir da configuração do agente.
 Suporta fallback automático entre providers.
 """
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 from app.core.logger import get_logger
 from app.schemas.agent import AgentConfig
@@ -87,20 +89,24 @@ class FallbackProvider(LLMProvider):
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.1,
+        execution_id: Optional[str] = None,
+        db: Optional["Session"] = None,
     ) -> str:
         return await self._call_with_fallback(
-            lambda: self._primary.chat_async(prompt, system_prompt, temperature),
-            lambda: self._fallback.chat_async(prompt, system_prompt, temperature),
+            lambda: self._primary.chat_async(prompt, system_prompt, temperature, execution_id=execution_id, db=db),
+            lambda: self._fallback.chat_async(prompt, system_prompt, temperature, execution_id=execution_id, db=db),
         )
 
     async def get_plan_async(
         self,
         system_prompt: str,
         user_message: str,
+        execution_id: Optional[str] = None,
+        db: Optional["Session"] = None,
     ) -> LLMPlan:
         return await self._call_with_fallback(
-            lambda: self._primary.get_plan_async(system_prompt, user_message),
-            lambda: self._fallback.get_plan_async(system_prompt, user_message),
+            lambda: self._primary.get_plan_async(system_prompt, user_message, execution_id=execution_id, db=db),
+            lambda: self._fallback.get_plan_async(system_prompt, user_message, execution_id=execution_id, db=db),
         )
 
     async def health_check(self) -> tuple[bool, str]:

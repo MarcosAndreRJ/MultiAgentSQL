@@ -115,3 +115,13 @@ class AgentDetail(AgentSummary):
     permissions: AgentPermissions
     guards: AgentGuards
     behavior: AgentBehavior
+
+
+class AgentCreate(BaseModel):
+    """Schema para criar novo agente via API."""
+    name: str = Field(..., min_length=1)
+    description: str = ""
+    model: str = "llama3"
+    type: str = Field(default="mysql-specialist")
+    prompt_file: str = "base.txt"
+    database: Optional[DatabaseConfig] = None

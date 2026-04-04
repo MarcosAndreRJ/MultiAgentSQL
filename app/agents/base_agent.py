@@ -7,6 +7,7 @@ from typing import Optional
 from app.core.logger import get_logger
 from app.schemas.agent import AgentConfig
 from app.schemas.chat import Session, LLMPlan, ChatResponse
+from sqlalchemy.orm import Session as DBSession
 
 logger = get_logger("base_agent")
 
@@ -47,7 +48,9 @@ class BaseAgent(ABC):
         message: str,
         session: Session,
         resolved_tables: Optional[list[str]] = None,
-        run_id: Optional[str] = None
+        run_id: Optional[str] = None,
+        execution_id: Optional[str] = None,
+        db: Optional[DBSession] = None
     ) -> ChatResponse:
         """
         Processa uma mensagem do usuário e retorna a resposta.

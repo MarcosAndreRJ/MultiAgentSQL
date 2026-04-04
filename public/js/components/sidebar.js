@@ -1,46 +1,37 @@
-/**
- * sidebar.js — Controle da navegação lateral (Hash Router aware)
- * Renderiza o menu e sincroniza o item ativo com a rota atual.
+﻿/**
+ * sidebar.js - Side navigation controller
+ * Renders menu and syncs active item with route.
  */
 
 import { store } from '../store.js';
 
 const NAV_ITEMS = [
-  // Workspace operacional
   {
     section: 'WORKSPACE',
     items: [
-      { route: 'workspace', icon: '💬', label: 'Chat' },
+      { route: 'workspace', icon: 'C', label: 'Chat' },
     ],
   },
-  // Gestão
   {
     section: 'MANAGEMENT',
     items: [
-      { route: 'providers', icon: '🔌', label: 'Providers' },
-      { route: 'models',    icon: '🧩', label: 'Models' },
-      { route: 'agents',    icon: '🤖', label: 'Agents' },
+      { route: 'providers', icon: 'P', label: 'Providers' },
+      { route: 'models', icon: 'M', label: 'Models' },
+      { route: 'agents', icon: 'A', label: 'Agents' },
     ],
   },
-  // Observabilidade
   {
     section: 'OBSERVABILITY',
     items: [
-      { route: 'health',   icon: '❤️', label: 'Health' },
-      { route: 'sentinel', icon: '🛡️', label: 'Sentinel', badge: 'SOON' },
+      { route: 'health', icon: 'H', label: 'Health' },
+      { route: 'sentinel', icon: 'S', label: 'Sentinel' },
     ],
   },
 ];
 
-/**
- * Monta o HTML do sidebar nav e ativa listeners de clique.
- * @param {HTMLElement} navEl — o elemento #sidebar-nav
- * @param {Function} onNavigate — callback(route)
- */
 export function initSidebar(navEl, onNavigate) {
   renderSidebar(navEl, store.get('route'), onNavigate);
 
-  // Sincroniza quando a rota muda
   store.on('route', (route) => {
     updateActiveItem(navEl, route);
   });
@@ -79,7 +70,6 @@ function renderSidebar(navEl, currentRoute, onNavigate) {
 
     navEl.appendChild(section);
 
-    // Divider entre grupos
     const divider = document.createElement('div');
     divider.className = 'sidebar-divider';
     navEl.appendChild(divider);
@@ -87,7 +77,7 @@ function renderSidebar(navEl, currentRoute, onNavigate) {
 }
 
 function updateActiveItem(navEl, activeRoute) {
-  navEl.querySelectorAll('.nav-item').forEach(btn => {
+  navEl.querySelectorAll('.nav-item').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.route === activeRoute);
   });
 }

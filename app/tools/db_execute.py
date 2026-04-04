@@ -14,6 +14,8 @@ from app.core.settings import settings
 from app.schemas.agent import AgentConfig
 from app.schemas.execution import DBExecuteRequest, DBExecuteResult
 from app.tools.db_connection_manager import get_connection
+from app.services.observability.execution_observability_service import log_agent_execution
+from app.db.session import SessionLocal
 
 logger = get_logger("db_execute")
 
@@ -66,7 +68,7 @@ def execute(
 
     try:
         conn = get_connection(agent.id, agent.database)
-        return _run_sql(conn, sql, request.params or {}, agent)
+        return _run_sql(conn, sql, request.params or {}, agent, execution_id=request.execution_id)
 
     except MySQLError as e:
         elapsed = (time.time() - start_time) * 1000
@@ -93,6 +95,7 @@ def _run_sql(
     sql: str,
     params: dict,
     agent: AgentConfig,
+    execution_id: Optional[str] = None,
 ) -> DBExecuteResult:
     """Executa o SQL na conexão e retorna resultado formatado."""
     start_time = time.time()
@@ -140,7 +143,7 @@ def _run_sql(
             f"SQL executado | agente={agent.id} | rows={len(rows)} | affected={rows_affected} | {elapsed:.1f}ms"
         )
 
-        return DBExecuteResult(
+        exec_result = DBExecuteResult(
             success=True,
             rows=rows,
             rows_affected=rows_affected,
@@ -150,7 +153,49 @@ def _run_sql(
             truncated=truncated,
         )
 
+        # Log de Observabilidade
+        if execution_id:
+            try:
+                with SessionLocal() as db:
+                    log_agent_execution(
+                        db=db,
+                        execution_id=execution_id,
+                        agent_id=agent.id,
+                        database_connection_id=None, # Ver nota abaixo
+                        query=sql,
+                        status="success",
+                        execution_time_ms=elapsed,
+                        result_summary={
+                            "row_count": len(rows),
+                            "rows_affected": rows_affected,
+                            "column_count": len(columns),
+                            "truncated": truncated
+                        }
+                    )
+            except Exception as e:
+                logger.warning(f"Erro ao registrar log de observabilidade: {e}")
+
+        return exec_result
+
     except MySQLError as e:
+        # Log de erro de execução
+        if execution_id:
+            try:
+                elapsed = (time.time() - start_time) * 1000
+                with SessionLocal() as db:
+                    log_agent_execution(
+                        db=db,
+                        execution_id=execution_id,
+                        agent_id=agent.id,
+                        database_connection_id=None,
+                        query=sql,
+                        status="error",
+                        execution_time_ms=elapsed,
+                        error_message=str(e),
+                        result_summary={}
+                    )
+            except Exception:
+                pass
         raise
     finally:
         if cursor:

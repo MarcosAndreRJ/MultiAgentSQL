@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     APP_DEBUG: bool = False
     APP_SECRET_KEY: str = "change-me-in-production"
 
+    # ── LLM Providers ─────────────────────────────────────
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    
     # ── Ollama ────────────────────────────────────────────
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_DEFAULT_MODEL: str = "llama3.1:8b"
@@ -33,6 +37,10 @@ class Settings(BaseSettings):
     GEMINI_MODEL_DEFAULT: str = "gemini-2.0-flash-lite"
     GEMINI_TIMEOUT_SECONDS: int = 30
     GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
+
+    # ── Sentinel (Observabilidade Funcional) ──────────────
+    SENTINEL_ENABLED: bool = True
+    SENTINEL_INTERVAL_MINUTES: int = 20
 
     # ── Paths ─────────────────────────────────────────────
     AGENTS_CONFIG_DIR: str = "config/agents"

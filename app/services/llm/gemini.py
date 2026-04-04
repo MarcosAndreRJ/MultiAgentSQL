@@ -13,6 +13,8 @@ from app.core.logger import get_logger
 from app.core.settings import settings
 from app.schemas.chat import LLMPlan
 from app.services.llm.base import LLMProvider, LLMProviderError
+from app.services.observability.execution_observability_service import log_provider_execution
+from sqlalchemy.orm import Session
 
 logger = get_logger("llm_provider.gemini")
 
@@ -129,12 +131,16 @@ class GeminiProvider(LLMProvider):
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.1,
+        execution_id: Optional[str] = None,
+        db: Optional[Session] = None,
     ) -> str:
         url = self._build_url("generateContent")
         payload = self._build_payload(prompt, system_prompt, temperature)
 
-        logger.info(f"[GEMINI_REQUEST] model={self._model} prompt_len={len(prompt)}")
+        logger.info(f"[GEMINI_REQUEST] model={self._model} prompt_len={len(prompt)} execution_id={execution_id}")
         t0 = time.monotonic()
+        status = "success"
+        err_msg = None
 
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
@@ -147,28 +153,53 @@ class GeminiProvider(LLMProvider):
                 return text
 
         except httpx.TimeoutException:
+            status = "error"
+            err_msg = f"Timeout ({self._timeout}s)"
             logger.error(f"[GEMINI_TIMEOUT] model={self._model} timeout={self._timeout}s")
             raise LLMProviderError("gemini", f"Timeout ({self._timeout}s) aguardando resposta do Gemini.")
         except httpx.HTTPStatusError as e:
+            status = "error"
             body = e.response.text[:300]
+            err_msg = f"HTTP {e.response.status_code}: {body}"
             logger.error(f"[GEMINI_ERROR] HTTP {e.response.status_code}: {body}")
             raise LLMProviderError("gemini", f"Erro HTTP {e.response.status_code}: {body}") from e
-        except LLMProviderError:
+        except LLMProviderError as e:
+            status = "error"
+            err_msg = str(e)
             raise
         except Exception as e:
+            status = "error"
+            err_msg = str(e)
             logger.error(f"[GEMINI_ERROR] Inesperado: {e}")
             raise LLMProviderError("gemini", f"Erro inesperado: {e}") from e
+        finally:
+            if db and execution_id:
+                latency = (time.monotonic() - t0) * 1000
+                log_provider_execution(
+                    db=db,
+                    execution_id=execution_id,
+                    provider_id="gemini",
+                    model_id=self._model,
+                    operation="chat",
+                    status=status,
+                    latency_ms=latency,
+                    error_message=err_msg
+                )
 
     async def get_plan_async(
         self,
         system_prompt: str,
         user_message: str,
+        execution_id: Optional[str] = None,
+        db: Optional[Session] = None,
     ) -> LLMPlan:
         full_system = f"{system_prompt}\n\n{_PLANNING_INSTRUCTION}"
         raw = await self.chat_async(
             prompt=user_message,
             system_prompt=full_system,
             temperature=0.05,
+            execution_id=execution_id,
+            db=db,
         )
         return _parse_gemini_plan(raw)
 

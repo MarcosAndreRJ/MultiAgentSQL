@@ -5,7 +5,9 @@ Runtime persistente com agentes independentes para operar bancos MySQL via LLMs 
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -14,6 +16,7 @@ from app.core.logger import get_logger
 from app.tools.db_connection_manager import close_all
 from app.db.session import init_db, SessionLocal
 from app.services.dashboard import providers_service, models_service
+from app.services.sentinel.scheduler_service import start_sentinel
 
 logger = get_logger("app")
 
@@ -40,20 +43,25 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning(f"Não foi possível verificar Ollama: {exc}")
 
-    # Inicializar Banco de Dados e Bootstrap (Resiliente)
+    # Inicializar Banco de Dados e Bootstrap (Fundação de Infra)
     try:
         init_db()
         db = SessionLocal()
         try:
             await providers_service.bootstrap_providers(db)
             await models_service.bootstrap_models(db)
+            logger.info("Fundação MySQL: Sincronizada e PRONTA em 192.168.0.5")
         finally:
             db.close()
+            
+        # Iniciar Scheduler do Sentinel (Segundo Plano)
+        await start_sentinel()
+        
     except Exception as db_exc:
-        logger.error(f"Falha na conexão inicial com MySQL: {db_exc}")
-        logger.warning("O dashboard poderá apresentar erros de dados, mas o chat continuará operando via fallback.")
+        logger.error(f"FALHA NA FUNDAÇÃO MYSQL: {db_exc}")
+        logger.warning("MODO DEGRADADO: Dashboard limitado ao cache local. Chat opera via fallback YAML.")
 
-    logger.info("MultiAgent SQL - Runtime pronto!")
+    logger.info("MultiAgent SQL - Sistema Operacional!")
     yield
 
     logger.info("MultiAgent SQL - Encerrando...")
@@ -76,6 +84,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """
+    Handler global para erros 422 do Pydantic.
+    Transforma erros técnicos em mensagens compreensíveis para o dashboard.
+    """
+    errors = []
+    for error in exc.errors():
+        # Ex: "body -> type: field required"
+        field = " -> ".join([str(x) for x in error.get("loc", []) if x != "body"])
+        msg = error.get("msg")
+        errors.append(f"**{field}**: {msg}")
+    
+    friendly_msg = "Falha na validação dos dados: " + " | ".join(errors)
+    logger.warning(f"Erro 422: {friendly_msg}")
+    
+    return JSONResponse(
+        status_code=422,
+        content={"detail": friendly_msg},
+    )
+
 # Registrar routers da API
 from app.api.routes_agents import router as agents_router
 from app.api.routes_aliases import router as aliases_router
@@ -90,6 +120,12 @@ from app.api.routes_providers import router as providers_router
 from app.api.routes_models import router as models_router
 from app.api.routes_health import router as health_router
 from app.api.routes_config import router as config_router
+from app.api.routes_target_db import router as target_db_router
+from app.api.routes_providers_v2 import router as providers_v2_router
+from app.api.routes_database_connections import router as db_connections_router
+from app.api.routes_agent_database_bindings import router as agent_db_bindings_router
+from app.api.routes_observability import router as observability_router
+from app.api.routes_sentinel import router as sentinel_router
 
 app.include_router(agents_router)
 app.include_router(chat_router)
@@ -101,10 +137,16 @@ app.include_router(aliases_router)
 app.include_router(upload_router)
 app.include_router(diagram_router)
 
-# Rotas de Dashboard
+# Incluir routers operacionais e de gestão
+app.include_router(target_db_router, prefix="/api", tags=["Agente - Target DB"])
+app.include_router(providers_v2_router, tags=["Provedores LLM"])
+app.include_router(db_connections_router)
+app.include_router(agent_db_bindings_router)
 app.include_router(providers_router)
 app.include_router(models_router)
 app.include_router(health_router)
+app.include_router(observability_router)
+app.include_router(sentinel_router)
 app.include_router(config_router)
 
 

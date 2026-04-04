@@ -12,6 +12,9 @@ from app.core.logger import get_logger
 from app.core.sql_classifier import classify_sql
 from app.schemas.execution import DBExecuteRequest, DBExecuteResult, ExecutionRecord
 from app.tools import db_execute
+from sqlalchemy.orm import Session
+from app.db.session import SessionLocal
+from app.services.platform import agent_governance_service
 
 logger = get_logger("execution_service")
 
@@ -25,6 +28,7 @@ async def execute_sql(
     sql: str,
     session_id: str,
     skip_guard: bool = False,
+    db: Optional[Session] = None,
 ) -> dict:
     """
     Executa SQL diretamente para um agente (via API de execução).
@@ -33,9 +37,24 @@ async def execute_sql(
     Returns:
         Dict com success, result, guard_decision, classification.
     """
-    config = agent_registry.get(agent_id)
-    if not config:
-        return {"success": False, "error": f"Agente '{agent_id}' não encontrado"}
+    # Governança: Resolver configuração do banco
+    own_session = False
+    if db is None:
+        db = SessionLocal()
+        own_session = True
+        
+    try:
+        runtime_config = agent_governance_service.resolve_agent_runtime_config(db, agent_id)
+        
+        if not runtime_config.is_active:
+            return {"success": False, "error": f"Agente '{agent_id}' está INATIVO ou não existe no banco de governança."}
+            
+        config = agent_registry.get(agent_id)
+        if not config:
+            return {"success": False, "error": f"Configuração legada não encontrada para o agente '{agent_id}'"}
+    finally:
+        if own_session:
+            db.close()
 
     if not config.database:
         return {"success": False, "error": "Agente não possui banco de dados configurado"}

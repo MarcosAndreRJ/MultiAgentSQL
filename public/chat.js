@@ -399,13 +399,21 @@ function chatApp() {
     createAgent() {
       const name = this.newAgentName.trim();
       if (!name) return;
-      const formData = new FormData();
-      formData.append('name', this.newAgentName);
-      formData.append('description', this.newAgentPrompt);
-      formData.append('llmModel', this.newAgentLlmModel);
-      for (const f of this.newAgentFiles) formData.append('files', f);
+      
+      const payload = {
+        name: this.newAgentName,
+        description: this.newAgentPrompt,
+        model: this.newAgentLlmModel || "llama3",
+        type: "mysql-specialist",
+        prompt_file: "base.txt",
+        database: null
+      };
 
-      fetch('/api/agents', { method: 'POST', body: formData }).then(r => r.json()).then(d => {
+      fetch('/api/agents', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(r => r.json()).then(d => {
         if (d.ok) {
           this.agents.push(d.agent);
           this.messagesByAgent[d.agent.id] = [];

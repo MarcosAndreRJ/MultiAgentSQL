@@ -10,7 +10,9 @@ from app.core import session_store
 from app.core.logger import get_logger
 from app.schemas.agent import AgentConfig
 from app.schemas.chat import Session, ChatResponse
-from app.services import ollama_client
+from app.services.llm.factory import get_provider
+from app.services.llm.base import LLMProviderError
+from sqlalchemy.orm import Session as DBSession
 
 logger = get_logger("principal_agent")
 
@@ -31,6 +33,9 @@ class PrincipalAgent(BaseAgent):
         message: str,
         session: Session,
         resolved_tables: Optional[list[str]] = None,
+        run_id: Optional[str] = None,
+        execution_id: Optional[str] = None,
+        db: Optional[DBSession] = None
     ) -> ChatResponse:
         """
         Processa mensagem sem tools de banco.
@@ -53,14 +58,16 @@ class PrincipalAgent(BaseAgent):
             resolved_tables=resolved_tables,
         )
 
-        # Chamar Ollama
+        # Chamar LLM via Factory
+        llm = get_provider(self.config)
         try:
-            response_text = await ollama_client.chat_async(
-                model=self.model,
+            response_text = await llm.chat_async(
                 prompt=full_prompt,
                 temperature=0.3,
+                execution_id=execution_id,
+                db=db,
             )
-        except ollama_client.OllamaError as e:
+        except LLMProviderError as e:
             error_msg = self._format_error(str(e))
             session_store.add_message(session.session_id, "assistant", error_msg)
             return ChatResponse(

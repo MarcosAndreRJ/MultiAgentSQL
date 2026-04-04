@@ -15,7 +15,10 @@ from app.schemas.chat import ChatMessage, ChatResponse, Session
 from app.schemas.execution import DBExecuteRequest
 from app.services import progress_service, fastpath_service, fastpath_v2_service
 from app.services import sql_direct_service, nl_sql_fastpath_service
-from app.tools import db_execute
+from app.services.observability.execution_observability_service import generate_execution_id
+from sqlalchemy.orm import Session
+from app.db.session import SessionLocal
+from app.services.platform import agent_governance_service
 
 logger = get_logger("chat_service")
 
@@ -26,18 +29,33 @@ _agent_instances: dict[str, BaseAgent] = {}
 _active_tasks: dict[str, asyncio.Task] = {}
 
 
-def get_agent_instance(agent_id: str) -> Optional[BaseAgent]:
+def get_agent_instance(agent_id: str, db: Optional[Session] = None) -> Optional[BaseAgent]:
     """
     Obtém instância do agente, criando se necessário.
+    Utiliza o resolve_agent_runtime_config para garantir governança.
     """
     if agent_id in _agent_instances:
         return _agent_instances[agent_id]
 
-    config = agent_registry.get(agent_id)
-    if not config:
-        return None
-
+    # Resolve a configuração efetiva (DB > YAML)
+    own_session = False
+    if db is None:
+        db = SessionLocal()
+        own_session = True
+    
     try:
+        runtime_config = agent_governance_service.resolve_agent_runtime_config(db, agent_id)
+        
+        if not runtime_config.is_active:
+            logger.warning(f"Tentativa de acesso a agente inativo: {agent_id}")
+            return None
+
+        # Carregar o AgentConfig legado para compatibilidade com os construtores atuais
+        # TODO: Refatorar Agentes para aceitar AgentRuntimeConfig diretamente no futuro
+        config = agent_registry.get(agent_id)
+        if not config:
+            return None
+
         if config.type == "principal":
             instance = PrincipalAgent(config)
         elif config.type == "mysql-specialist":
@@ -47,15 +65,18 @@ def get_agent_instance(agent_id: str) -> Optional[BaseAgent]:
             return None
 
         _agent_instances[agent_id] = instance
-        logger.debug(f"Instância de agente criada: {agent_id} (tipo={config.type})")
+        logger.debug(f"Instância de agente criada: {agent_id} (tipo={config.type} | source={runtime_config.source})")
         return instance
 
     except Exception as e:
-        logger.error(f"Erro ao criar agente '{agent_id}': {e}")
+        logger.error(f"Erro ao resolver/criar agente '{agent_id}': {e}")
         return None
+    finally:
+        if own_session:
+            db.close()
 
 
-async def process_message(msg: ChatMessage) -> ChatResponse:
+async def process_message(msg: ChatMessage, db: Optional[Session] = None) -> ChatResponse:
     """
     Processa uma mensagem de chat completa.
     
@@ -67,8 +88,12 @@ async def process_message(msg: ChatMessage) -> ChatResponse:
     """
     logger.info(f"[CHAT] agent={msg.agent_id} | session={msg.session_id} | msg='{msg.message[:80]}'")
 
-    # 1. Validar agente
-    agent = get_agent_instance(msg.agent_id)
+    # Gerar Correlation ID para observabilidade
+    execution_id = generate_execution_id()
+    logger.info(f"[OBSERVABILITY] correlation_id={execution_id}")
+
+    # 1. Validar agente e status de ativação (Governança)
+    agent = get_agent_instance(msg.agent_id, db=db)
     if not agent:
         logger.error(f"Agente não encontrado: {msg.agent_id}")
         return ChatResponse(
@@ -126,7 +151,14 @@ async def process_message(msg: ChatMessage) -> ChatResponse:
     _active_tasks[msg.session_id] = current_task
     
     try:
-        response = await agent.process(resolved_message, session, resolved_tables=resolved_tables, run_id=run_id)
+        response = await agent.process(
+            resolved_message, 
+            session, 
+            resolved_tables=resolved_tables, 
+            run_id=run_id,
+            execution_id=execution_id,
+            db=db
+        )
         # Marcar todos os eventos da run como concluídos ao terminar
         await progress_service.complete_run(msg.session_id, run_id)
         return response

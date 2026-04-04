@@ -29,3 +29,9 @@ python-multipart>=0.0.9
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 httpx>=0.26.0  # also used for testing FastAPI
+
+# SQL Parser (Security)
+sqlglot>=23.0.0
+
+# LLM SDKs
+openai>=1.12.0

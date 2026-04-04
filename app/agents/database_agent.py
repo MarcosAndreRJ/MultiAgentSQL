@@ -18,6 +18,7 @@ from app.services.llm.base import LLMProviderError
 from app.tools import db_execute, db_introspection, db_mockdata
 from app.tools.db_mockdata import generate_and_insert
 from app.utils.text_formatter import format_rows
+from sqlalchemy.orm import Session as DBSession
 
 logger = get_logger("database_agent")
 
@@ -41,7 +42,9 @@ class DatabaseAgent(BaseAgent):
         message: str,
         session: Session,
         resolved_tables: Optional[list[str]] = None,
-        run_id: Optional[str] = None
+        run_id: Optional[str] = None,
+        execution_id: Optional[str] = None,
+        db: Optional[DBSession] = None
     ) -> ChatResponse:
         """
         Agent loop principal:
@@ -160,6 +163,8 @@ class DatabaseAgent(BaseAgent):
                 plan = await _llm_provider.get_plan_async(
                     system_prompt=full_prompt,
                     user_message=current_msg,
+                    execution_id=execution_id,
+                    db=db,
                 )
             except LLMProviderError as e:
                 self.logger.error(f"[AGENT] LLMProviderError: {e}")
@@ -212,12 +217,12 @@ class DatabaseAgent(BaseAgent):
                 )
 
             # Executar tools quando necessário
-            tool_results = await self._execute_tools(plan, session)
+            tool_results = await self._execute_tools(plan, session, execution_id=execution_id)
 
             # Se há SQL no plano, processar via guard
             sql = plan.sql or _extract_sql_from_tools(plan)
             if sql:
-                resp = await self._handle_sql(sql, plan, session, tool_results, run_id=run_id)
+                resp = await self._handle_sql(sql, plan, session, tool_results, run_id=run_id, execution_id=execution_id)
                 resp.model = self.model
                 resp.execution_source = "llm_with_tools"
                 resp.used_llm = True
@@ -249,7 +254,7 @@ class DatabaseAgent(BaseAgent):
             latency_ms=(time.monotonic() - _t0) * 1000
         )
 
-    async def _execute_tools(self, plan: LLMPlan, session: Session) -> list[dict]:
+    async def _execute_tools(self, plan: LLMPlan, session: Session, execution_id: Optional[str] = None) -> list[dict]:
         """Executa as tools indicadas no plano."""
         results = []
         max_steps = min(len(plan.tools), self.config.behavior.max_loop_steps)
@@ -262,7 +267,7 @@ class DatabaseAgent(BaseAgent):
 
             self.logger.info(f"[TOOL {i+1}/{max_steps}] {tool_name}.{action} | input={tool_input}")
 
-            result = await self._call_tool(tool_name, action, tool_input, session)
+            result = await self._call_tool(tool_name, action, tool_input, session, execution_id=execution_id)
 
             success = result.get("success", False)
             rows_count = len(result.get("rows") or [])
@@ -283,7 +288,7 @@ class DatabaseAgent(BaseAgent):
 
         return results
 
-    async def _call_tool(self, tool_name: str, action: str, tool_input: dict, session: Session) -> dict:
+    async def _call_tool(self, tool_name: str, action: str, tool_input: dict, session: Session, execution_id: Optional[str] = None) -> dict:
         """
         Chama uma tool específica com validação.
         Tool principal: db_execute.
@@ -302,6 +307,7 @@ class DatabaseAgent(BaseAgent):
                 params=tool_input.get("params", {}),
                 mode=tool_input.get("mode", "read"),
                 dry_run=False,
+                execution_id=execution_id,
             )
             result = db_execute.execute(req, agent)
             return result.model_dump()
@@ -333,7 +339,8 @@ class DatabaseAgent(BaseAgent):
         plan: LLMPlan,
         session: Session,
         tool_results: list[dict],
-        run_id: Optional[str] = None
+        run_id: Optional[str] = None,
+        execution_id: Optional[str] = None,
     ) -> ChatResponse:
         """
         Processa SQL via guard engine.
@@ -408,6 +415,7 @@ class DatabaseAgent(BaseAgent):
         req = DBExecuteRequest(
             sql=sql,
             mode=_infer_mode(plan.intent),
+            execution_id=execution_id,
         )
         exec_result = db_execute.execute(req, self.config)
 

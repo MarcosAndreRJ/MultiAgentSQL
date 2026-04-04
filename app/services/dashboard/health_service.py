@@ -12,27 +12,52 @@ from app.core.logger import get_logger
 
 logger = get_logger("services.health")
 
-async def check_database_health(db: Session) -> dict:
+async def check_platform_db_health(db: Session) -> dict:
     """
-    Verifica conexão com o MySQL.
+    Verifica conexão real com o platform_db no MySQL central (192.168.0.5).
     """
     start_time = time.time()
     try:
-        # Executa query leve
+        # Executa query leve e real do domínio platform
         db.execute(text("SELECT 1"))
         latency = (time.time() - start_time) * 1000
         return {
             "status": "ok",
-            "message": "Conexão com MySQL estabelecida.",
+            "domain": "platform_db",
+            "message": "Conectado ao MySQL Central em 192.168.0.5",
             "latency_ms": round(latency, 2)
         }
     except Exception as e:
-        logger.error(f"Erro no health do banco: {str(e)}")
+        error_str = str(e).lower()
+        msg = "Falha crítica no platform_db"
+        
+        if "access denied" in error_str:
+            msg = "Platform DB: Erro de Autenticação"
+        elif "unknown database" in error_str:
+            msg = "Platform DB: Banco 'MultiAgent' não encontrado"
+        elif "can't connect to mysql" in error_str:
+            msg = "Platform DB: Host 192.168.0.5 Inacessível"
+            
+        logger.error(f"Saúde da Plataforma: {msg} | Detalhe: {str(e)}")
         return {
             "status": "error",
-            "message": f"Erro MySQL: {str(e)}",
+            "domain": "platform_db",
+            "message": msg,
             "latency_ms": -1
         }
+
+async def check_agent_target_db_health(agent_id: str) -> dict:
+    """
+    CONTRATO (Etapa 2): Verifica se o agente consegue alcançar o seu banco operacional.
+    Não implementa lógica de pool de conexões externa nesta fase, apenas o contrato.
+    """
+    # TODO: Implementar na Etapa 3 usando TargetDatabaseConnection
+    return {
+        "status": "pending",
+        "domain": "target_db",
+        "agent_id": agent_id,
+        "message": "Monitoramento de target_db planejado para Etapa 3"
+    }
 
 async def check_providers_health(db: Session) -> dict:
     """

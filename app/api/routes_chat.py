@@ -4,9 +4,11 @@ POST /api/chat - enviar mensagem para agente
 GET /api/chat/{session_id}/history - histórico da sessão
 DELETE /api/chat/{session_id} - resetar sessão
 """
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 
+from app.db.session import get_db
 from app.core import session_store, stream_manager
 from app.schemas.chat import ChatMessage
 from app.services.chat_service import process_message, cancel_message
@@ -15,7 +17,7 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 
 @router.post("/")
-async def send_message(msg: ChatMessage):
+async def send_message(msg: ChatMessage, db: Session = Depends(get_db)):
     """Envia mensagem para um agente e recebe resposta."""
     if not msg.message.strip():
         raise HTTPException(status_code=400, detail="Mensagem não pode estar vazia")
@@ -25,7 +27,7 @@ async def send_message(msg: ChatMessage):
         import uuid
         msg.session_id = f"sess_{uuid.uuid4().hex[:16]}"
     
-    return await process_message(msg)
+    return await process_message(msg, db=db)
 
 
 @router.get("/{session_id}/history")

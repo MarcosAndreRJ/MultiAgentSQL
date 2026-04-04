@@ -11,18 +11,18 @@ from app.agents.skill_loader import list_available_skills, get_skill_content
 from app.core import agent_registry
 from app.core.logger import get_logger
 
-router = APIRouter(tags=["skills"])
+router = APIRouter(prefix="/api/skills", tags=["skills"])
 logger = get_logger("routes_skills")
 
 
-@router.get("/api/skills/")
+@router.get("/")
 async def list_skills():
     """Lista todas as skills disponíveis."""
     skills = list_available_skills()
     return {"skills": skills, "total": len(skills)}
 
 
-@router.get("/api/skills/{skill_id}")
+@router.get("/{skill_id}")
 async def get_skill(skill_id: str):
     """Retorna conteúdo completo de uma skill."""
     skill = get_skill_content(skill_id)
@@ -31,7 +31,7 @@ async def get_skill(skill_id: str):
     return skill
 
 
-@router.post("/api/agents/{agent_id}/skills")
+@router.post("/agents/{agent_id}/skills")
 async def add_skill(agent_id: str, skill_id: str):
     """Adiciona uma skill a um agente (em memória, sem persistir no YAML)."""
     if not agent_registry.exists(agent_id):
@@ -46,7 +46,7 @@ async def add_skill(agent_id: str, skill_id: str):
     return {"status": "ok" if success else "error", "agent_id": agent_id, "skill_id": skill_id}
 
 
-@router.delete("/api/agents/{agent_id}/skills/{skill_id}")
+@router.delete("/agents/{agent_id}/skills/{skill_id}")
 async def remove_skill(agent_id: str, skill_id: str):
     """Remove uma skill de um agente."""
     if not agent_registry.exists(agent_id):

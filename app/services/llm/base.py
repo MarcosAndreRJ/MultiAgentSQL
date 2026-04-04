@@ -3,7 +3,9 @@ LLM Provider — Interface base abstrata.
 Todo provider deve implementar esta interface.
 """
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 from app.schemas.chat import LLMPlan
 
@@ -32,6 +34,8 @@ class LLMProvider(ABC):
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.1,
+        execution_id: Optional[str] = None,
+        db: Optional["Session"] = None,
     ) -> str:
         """
         Envia prompt e retorna a resposta como string bruta.
@@ -45,6 +49,8 @@ class LLMProvider(ABC):
         self,
         system_prompt: str,
         user_message: str,
+        execution_id: Optional[str] = None,
+        db: Optional["Session"] = None,
     ) -> LLMPlan:
         """
         Solicita um plano estruturado (JSON) para o pipeline de execução.

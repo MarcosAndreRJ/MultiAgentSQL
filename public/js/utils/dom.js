@@ -7,7 +7,7 @@
  * Cria um elemento com atributos e filhos opcionais.
  * @param {string} tag
  * @param {object} [attrs]
- * @param {...(string|Node)} children
+ * @param {...(string|Node|{html:string})} children
  */
 export function el(tag, attrs = {}, ...children) {
   const elem = document.createElement(tag);
@@ -24,7 +24,29 @@ export function el(tag, attrs = {}, ...children) {
   }
   for (const child of children) {
     if (child == null) continue;
-    elem.append(typeof child === 'string' ? document.createTextNode(child) : child);
+    if (typeof child === 'string') {
+      // Check if it looks like HTML/SVG markup, then insert properly
+      if (child.trim().startsWith('<')) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = child;
+        while (wrapper.firstChild) {
+          elem.appendChild(wrapper.firstChild);
+        }
+      } else {
+        elem.appendChild(document.createTextNode(child));
+      }
+    } else if (child.html && typeof child.html === 'string') {
+      // Support { html: '<svg>...</svg>' } pattern for raw markup
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = child.html;
+      while (wrapper.firstChild) {
+        elem.appendChild(wrapper.firstChild);
+      }
+    } else if (child instanceof Node) {
+      elem.appendChild(child);
+    } else {
+      elem.appendChild(document.createTextNode(String(child)));
+    }
   }
   return elem;
 }
@@ -63,12 +85,15 @@ export function createTable(headers, rows) {
     const tr = el('tr', {});
     for (const cell of row) {
       const td = el('td', {});
-      if (typeof cell === 'string') {
-        td.textContent = cell;
+      if (cell == null) {
+        td.textContent = '—';
       } else if (cell instanceof Node) {
         td.appendChild(cell);
-      } else {
+      } else if (typeof cell === 'string' && cell.startsWith('<')) {
+        // Fallback para quando o HTML é intencional (mas queremos evitar isso)
         td.innerHTML = cell;
+      } else {
+        td.textContent = String(cell);
       }
       tr.appendChild(td);
     }

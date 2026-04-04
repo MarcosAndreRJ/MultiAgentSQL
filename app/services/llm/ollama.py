@@ -10,6 +10,9 @@ from app.core.settings import settings
 from app.schemas.chat import LLMPlan
 from app.services.llm.base import LLMProvider, LLMProviderError
 from app.services import ollama_client
+from app.services.observability.execution_observability_service import log_provider_execution
+import time
+from sqlalchemy.orm import Session
 
 logger = get_logger("llm_provider.ollama")
 
@@ -46,9 +49,14 @@ class OllamaProvider(LLMProvider):
         prompt: str,
         system_prompt: Optional[str] = None,
         temperature: float = 0.1,
+        execution_id: Optional[str] = None,
+        db: Optional[Session] = None,
     ) -> str:
+        _t0 = time.monotonic()
+        status = "success"
+        err_msg = None
         try:
-            logger.info(f"[LLM_PROVIDER_SELECTED] provider=ollama model={self._model}")
+            logger.info(f"[LLM_PROVIDER_SELECTED] provider=ollama model={self._model} execution_id={execution_id}")
             
             # Construir argumentos dinâmicos para evitar TypeError em hot-reload parcial
             kwargs = {
@@ -68,15 +76,35 @@ class OllamaProvider(LLMProvider):
             result = await ollama_client.chat_async(**kwargs)
             return result
         except ollama_client.OllamaError as e:
+            status = "error"
+            err_msg = str(e)
             raise LLMProviderError("ollama", str(e)) from e
+        finally:
+            if db and execution_id:
+                latency = (time.monotonic() - _t0) * 1000
+                log_provider_execution(
+                    db=db,
+                    execution_id=execution_id,
+                    provider_id="ollama",
+                    model_id=self._model,
+                    operation="chat",
+                    status=status,
+                    latency_ms=latency,
+                    error_message=err_msg
+                )
 
     async def get_plan_async(
         self,
         system_prompt: str,
         user_message: str,
+        execution_id: Optional[str] = None,
+        db: Optional[Session] = None,
     ) -> LLMPlan:
+        _t0 = time.monotonic()
+        status = "success"
+        err_msg = None
         try:
-            logger.info(f"[LLM_PROVIDER_SELECTED] provider=ollama model={self._model}")
+            logger.info(f"[LLM_PROVIDER_SELECTED] provider=ollama model={self._model} execution_id={execution_id}")
             
             # Construir argumentos dinâmicos
             kwargs = {
@@ -93,7 +121,22 @@ class OllamaProvider(LLMProvider):
 
             return await ollama_client.get_plan_async(**kwargs)
         except ollama_client.OllamaError as e:
+            status = "error"
+            err_msg = str(e)
             raise LLMProviderError("ollama", str(e)) from e
+        finally:
+            if db and execution_id:
+                latency = (time.monotonic() - _t0) * 1000
+                log_provider_execution(
+                    db=db,
+                    execution_id=execution_id,
+                    provider_id="ollama",
+                    model_id=self._model,
+                    operation="get_plan",
+                    status=status,
+                    latency_ms=latency,
+                    error_message=err_msg
+                )
 
     async def health_check(self) -> tuple[bool, str]:
         return await ollama_client.check_connection()
