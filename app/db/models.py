@@ -138,6 +138,8 @@ class Agent(Base):
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     agent_type = Column(String(50), nullable=False, default="database")
+    icon = Column(String(20), nullable=True, default="🤖")
+
     
     is_active = Column(Boolean, default=True, nullable=False)
     source = Column(String(20), default="yaml_legacy") # yaml_legacy, dashboard, api
@@ -146,6 +148,10 @@ class Agent(Base):
     permissions_json = Column(Text, nullable=True) # Antes em YAML: permissions
     guards_json = Column(Text, nullable=True)      # Antes em YAML: guards
     behavior_json = Column(Text, nullable=True)    # Antes em YAML: behavior
+    
+    # Configurações de conteúdo (referências)
+    prompt_file = Column(String(100), nullable=True)
+    skills_json = Column(Text, nullable=True) # Lista de IDs de skills em formato JSON
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

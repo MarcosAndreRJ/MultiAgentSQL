@@ -66,14 +66,37 @@ function createModelCard(model) {
     el('span', { class: 'stat-value' }, model.source === 'sync' ? 'Auto·Sync' : model.source)
   ));
 
+  // Barra de Uso (Etapa 4.2)
+  const usageContainer = el('div', { class: 'model-card-usage' });
+  const usageHeader = el('div', { class: 'usage-header' });
+  usageHeader.appendChild(el('span', {}, 'Uso da Janela'));
+  usageHeader.appendChild(el('span', { class: 'usage-percent' }, `${model.context_percentage || 0}%`));
+  
+  const progressBar = el('div', { class: 'progress-bar-bg' });
+  const progressFill = el('div', { 
+    class: 'progress-fill', 
+    style: `width: ${model.context_percentage || 0}%; background: ${getUsageColor(model.context_percentage)}` 
+  });
+  progressBar.appendChild(progressFill);
+  
+  usageContainer.appendChild(usageHeader);
+  usageContainer.appendChild(progressBar);
+
   const footer = el('div', { class: 'model-card-footer' });
   footer.appendChild(renderCapabilities(model));
 
   card.appendChild(header);
   card.appendChild(stats);
+  card.appendChild(usageContainer);
   card.appendChild(footer);
   
   return card;
+}
+
+function getUsageColor(percent) {
+  if (!percent || percent < 50) return 'var(--green)';
+  if (percent < 85) return 'var(--yellow)';
+  return 'var(--red)';
 }
 
 function createProviderSection(provider, models, onSync) {

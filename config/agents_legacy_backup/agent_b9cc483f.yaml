@@ -1,0 +1,36 @@
+behavior:
+  introspect_before_ddl: true
+  language: pt-BR
+  max_loop_steps: 3
+  max_result_rows: 500
+  response_style: technical
+database:
+  connect_timeout: 10
+  host: 192.168.0.5
+  name: devhacks_site
+  password: root
+  pool_size: 3
+  port: 3306
+  user: root
+description: vc é um dba mysql
+guards:
+  auto_approve:
+  - SELECT
+  - SHOW
+  - DESCRIBE
+  require_confirmation_for:
+  - DELETE
+  - DROP
+  - TRUNCATE
+id: agent_b9cc483f
+model: object
+name: dba_devhacks
+permissions:
+  can_ddl: false
+  can_execute: false
+  can_read_db: true
+  can_write_db: false
+  protected_tables: []
+prompt_file: base.txt
+skills: []
+type: mysql-specialist

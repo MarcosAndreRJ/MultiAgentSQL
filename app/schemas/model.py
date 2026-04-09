@@ -21,6 +21,8 @@ class ModelRead(BaseModel):
     is_active: bool = Field(default=True, description="Ativo para uso (governança)")
     status: str = Field(default="active", description="Status compatível (active/inactive)")
     source: str = Field(default="sync", description="Origem: sync, manual, bootstrap")
+    context_usage: Optional[int] = Field(default=None, description="Tokens usados no período")
+    context_percentage: Optional[float] = Field(default=None, description="Porcentagem de uso da janela")
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 

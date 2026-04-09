@@ -62,6 +62,7 @@ class AgentConfig(BaseModel):
     description: str
     type: str  # "principal" | "mysql-specialist"
     model: str
+    icon: Optional[str] = "🤖"
     prompt_file: str
     skills: list[str] = Field(default_factory=list)
     database: Optional[DatabaseConfig] = None
@@ -104,6 +105,7 @@ class AgentSummary(BaseModel):
     description: str
     type: str
     model: str
+    icon: Optional[str] = "🤖"
     database_name: Optional[str] = None
     skills: list[str] = Field(default_factory=list)
     is_online: bool = False
@@ -112,6 +114,7 @@ class AgentSummary(BaseModel):
 class AgentDetail(AgentSummary):
     """Detalhes completos de agente para a API."""
     prompt_preview: Optional[str] = None
+    database: Optional[DatabaseConfig] = None
     permissions: AgentPermissions
     guards: AgentGuards
     behavior: AgentBehavior
@@ -121,7 +124,18 @@ class AgentCreate(BaseModel):
     """Schema para criar novo agente via API."""
     name: str = Field(..., min_length=1)
     description: str = ""
-    model: str = "llama3"
-    type: str = Field(default="mysql-specialist")
+    model: Optional[str] = None # Se None, o service descobre o melhor
+    type: str = Field(default="mysql-specialist") # dba | mockdata
+    icon: Optional[str] = "🤖"
     prompt_file: str = "base.txt"
+    database: Optional[DatabaseConfig] = None
+
+
+class AgentUpdate(BaseModel):
+    """Schema para atualizar agente via API."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    model: Optional[str] = None
+    type: Optional[str] = None
+    icon: Optional[str] = None
     database: Optional[DatabaseConfig] = None

@@ -131,7 +131,8 @@ async function refreshAgents() {
 async function loadAgents() {
   try {
     const res = await fetch(`${API_BASE}/api/agents/`);
-    const agents = await res.json();
+    const data = await res.json();
+    const agents = Array.isArray(data) ? data : (data.agents || []);
     renderAgentList(agents);
   } catch (e) {
     document.getElementById('agentList').innerHTML =

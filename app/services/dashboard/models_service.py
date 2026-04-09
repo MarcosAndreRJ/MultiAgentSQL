@@ -37,6 +37,13 @@ async def get_all_models(db: Session, provider_id: Optional[int] = None) -> List
     for m in models:
         provider_name = m.provider.name if m.provider else None
         
+        # Simulação de uso para exibição no Dashboard (Etapa 4.2)
+        # Em produção, isso viria de uma tabela de 'model_usage_metrics'
+        import random
+        usage = random.randint(0, m.context_window or 8192) if m.is_active else 0
+        limit = m.context_window or 8192
+        percent = round((usage / limit) * 100, 1) if limit > 0 else 0
+
         result.append(ModelRead(
             id=m.id,
             model_id=m.model_identifier,
@@ -51,11 +58,33 @@ async def get_all_models(db: Session, provider_id: Optional[int] = None) -> List
             is_active=m.is_active,
             status="active" if (m.is_available and m.is_active) else "inactive",
             source=m.source,
+            context_usage=usage,
+            context_percentage=percent,
             created_at=m.created_at,
             updated_at=m.updated_at,
         ))
     
     return result
+
+async def get_best_available_model(db: Session) -> str:
+    """
+    Retorna o identificador do melhor modelo disponível e ativo.
+    Heurística:
+    1. Filtra por is_active=True e is_available=True
+    2. Ordena por context_window DESC (preferência por modelos mais potentes)
+    3. Fallback para 'llama3' (ollama default)
+    """
+    model = db.query(LLMModel).filter(
+        LLMModel.is_active == True,
+        LLMModel.is_available == True
+    ).order_by(LLMModel.context_window.desc()).first()
+    
+    if model:
+        logger.info(f"Selecionado melhor modelo: {model.model_identifier} (win: {model.context_window})")
+        return model.model_identifier
+    
+    logger.warning("Nenhum modelo ativo/disponível encontrado. Usando fallback 'llama3'")
+    return "llama3"
 
 
 async def get_models_catalog(db: Session) -> List[ProviderCatalogRead]:

@@ -280,6 +280,13 @@ select.input-cfg {
   padding-right: 28px;
 }
 
+/* Fix text contrast in select dropdown native options */
+select.form-input option,
+select.input-cfg option {
+  background-color: var(--input-bg, #1a1d23);
+  color: var(--ink, #fff);
+}
+
 textarea.form-input,
 textarea.input-cfg {
   resize: vertical;
@@ -597,6 +604,106 @@ textarea.input-cfg {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL LAYOUTS & SECTIONS
+═══════════════════════════════════════════════════════════ */
+.modal-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.modal-section {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+}
+
+.modal-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.modal-section h5 {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-section h5::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-2);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODEL USAGE BARS (Refinement)
+═══════════════════════════════════════════════════════════ */
+.model-card-usage {
+  margin: 12px 0;
+  padding: 10px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.usage-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+
+.usage-percent {
+  color: var(--accent);
+}
+
+.progress-bar-bg {
+  height: 6px;
+  background: var(--border-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
 }
 
 .no-models-message {

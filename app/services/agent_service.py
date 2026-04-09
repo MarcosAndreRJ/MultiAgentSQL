@@ -4,12 +4,13 @@ Agent Service: operações sobre agentes (listagem, detalhes, status de conexão
 from typing import Optional, List
 import uuid
 import yaml
+import json
 from pathlib import Path
 
 from app.core import agent_registry
 from app.core.logger import get_logger
 from app.core.settings import settings
-from app.schemas.agent import AgentSummary, AgentDetail, AgentCreate, DatabaseConfig
+from app.schemas.agent import AgentSummary, AgentDetail, AgentCreate, AgentUpdate, DatabaseConfig
 from app.db.session import SessionLocal
 from app.db import models as db_models
 from sqlalchemy import text
@@ -22,147 +23,186 @@ async def create_agent(data: AgentCreate, db_session: Optional[SessionLocal] = N
     """
     Cria um novo agente:
     1. Gera ID único
-    2. Cria arquivo YAML em config/agents/
-    3. Recarrega o agent_registry
-    4. Cria binding de banco se dados informados
+    2. Persiste na tabela 'agents' do platform_db
+    3. Cria binding de banco operacional (target_db) na tabela 'agent_database_bindings'
     """
-    agent_id = f"agent_{uuid.uuid4().hex[:8]}"
-    
-    agent_config = {
-        "id": agent_id,
-        "name": data.name,
-        "description": data.description,
-        "type": data.type,
-        "model": data.model,
-        "prompt_file": data.prompt_file,
-        "skills": [],
-        "permissions": {
+    own_session = False
+    if db_session is None:
+        db_session = SessionLocal()
+        own_session = True
+
+    try:
+        agent_id = f"agent_{uuid.uuid4().hex[:8]}"
+        
+        # Escolha de modelo: manual ou assistida
+        model_to_use = data.model
+        if not model_to_use:
+            from app.services.dashboard.models_service import get_best_available_model
+            try:
+                model_to_use = await get_best_available_model(db_session)
+            except Exception:
+                model_to_use = "llama3"
+
+        # Configurações padrão para novo agente
+        import json
+        permissions = {
             "can_read_db": True,
             "can_write_db": False,
             "can_ddl": False,
             "can_execute": False,
             "protected_tables": []
-        },
-        "guards": {
+        }
+        guards = {
             "require_confirmation_for": ["DELETE", "DROP", "TRUNCATE"],
             "auto_approve": ["SELECT", "SHOW", "DESCRIBE"]
-        },
-        "behavior": {
+        }
+        behavior = {
             "max_loop_steps": 3,
             "response_style": "technical",
             "language": "pt-BR",
             "max_result_rows": 500,
             "introspect_before_ddl": True
         }
-    }
-    
-    if data.database:
-        agent_config["database"] = {
-            "host": data.database.host,
-            "port": data.database.port,
-            "name": data.database.name,
-            "user": data.database.user,
-            "password": data.database.password,
-            "connect_timeout": data.database.connect_timeout,
-            "pool_size": data.database.pool_size
-        }
-    
-    agents_dir = Path(settings.AGENTS_CONFIG_DIR)
-    agents_dir.mkdir(parents=True, exist_ok=True)
-    
-    yaml_path = agents_dir / f"{agent_id}.yaml"
-    with open(yaml_path, "w", encoding="utf-8") as f:
-        yaml.dump(agent_config, f, default_flow_style=False, allow_unicode=True)
-    
-    logger.info(f"Arquivo YAML criado: {yaml_path}")
-    
-    agent_registry.reload_agents()
-    
-    new_agent = agent_registry.get(agent_id)
-    if not new_agent:
-        raise Exception("Falha ao carregar agente após criação")
-    
-    if db_session and data.database:
-        try:
+
+        # 1. Persistir o Agente (Governança)
+        new_agent = db_models.Agent(
+            id=agent_id,
+            name=data.name,
+            description=data.description,
+            agent_type=data.type or "mysql-specialist",
+            is_active=True,
+            source="dashboard",
+            prompt_file=data.prompt_file or "base.txt",
+            skills_json="[]",
+            icon=data.icon or "🤖",
+            permissions_json=json.dumps(permissions),
+            guards_json=json.dumps(guards),
+            behavior_json=json.dumps(behavior)
+        )
+        db_session.add(new_agent)
+
+        # 2. Criar Binding de Banco (Operacional)
+        if data.database:
             binding = db_models.AgentDatabaseBinding(
                 agent_id=agent_id,
                 db_type="mysql",
                 host=data.database.host,
                 port=data.database.port,
                 database_name=data.database.name,
-                schema_name=None,
                 username=data.database.user,
                 password=data.database.password,
-                connection_label="default",
                 is_active=True,
                 is_default=True,
                 read_only=True
             )
             db_session.add(binding)
-            db_session.commit()
-            logger.info(f"Binding de banco criado para agente {agent_id}")
-        except Exception as e:
-            logger.warning(f"Banco configurado no YAML mas binding não criado: {e}")
-    
-    return AgentSummary(
-        id=new_agent.id,
-        name=new_agent.name,
-        description=new_agent.description,
-        type=new_agent.type,
-        model=new_agent.model,
-        database_name=new_agent.database.name if new_agent.database else None,
-        skills=new_agent.skills,
-        is_online=True
-    )
+            
+        # 3. Criar Binding de LLM (Governança)
+        # Tenta vincular ao modelo escolhido
+        from app.db import models as models
+        llm_model = db_session.query(models.LLMModel).filter(models.LLMModel.model_identifier == model_to_use).first()
+        if llm_model:
+            llm_binding = models.AgentLLMBinding(
+                agent_id=agent_id,
+                provider_id=llm_model.provider_id,
+                model_id=llm_model.id,
+                is_primary=True,
+                is_active=True
+            )
+            db_session.add(llm_binding)
+
+        db_session.commit()
+        logger.info(f"Agente {agent_id} criado com sucesso no banco de dados.")
+
+        return AgentSummary(
+            id=agent_id,
+            name=data.name,
+            description=data.description,
+            type=new_agent.agent_type,
+            model=model_to_use,
+            icon=new_agent.icon,
+            database_name=data.database.name if data.database else None,
+            skills=[],
+            is_online=True
+        )
+    except Exception as e:
+        db_session.rollback()
+        logger.error(f"Erro ao criar agente no banco: {e}")
+        raise e
+    finally:
+        if own_session:
+            db_session.close()
 
 
 async def list_agents() -> list[AgentSummary]:
-    """Lista todos os agentes com informações resumidas."""
-    agents = agent_registry.get_all()
-    summaries = []
-    
-    for config in agents:
-        summary = AgentSummary(
+    """Lista todos os agentes ativos no banco de dados."""
+    try:
+        db = SessionLocal()
+        try:
+            agents = db.query(db_models.Agent).filter(db_models.Agent.is_active == True).all()
+            summaries = []
+            
+            for ag in agents:
+                # Resolve o modelo vinculado
+                from app.services.platform import agent_governance_service
+                runtime = agent_governance_service.resolve_agent_runtime_config(db, ag.id)
+                
+                summary = AgentSummary(
+                    id=ag.id,
+                    name=ag.name,
+                    description=ag.description or "",
+                    type=ag.agent_type,
+                    model=runtime.llm_model_identifier or "unknown",
+                    icon=ag.icon or "🤖",
+                    database_name=runtime.db_connection_name if runtime.db_connection_name else None,
+                    skills=json.loads(ag.skills_json) if ag.skills_json else [],
+                    is_online=True,
+                )
+                summaries.append(summary)
+            
+            return summaries
+        finally:
+            db.close()
+    except Exception as e:
+        logger.error(f"Falha de conexão com o banco de dados de plataforma: {e}")
+        # Retornamos lista vazia ou levantamos erro específico tratado pelo middleware
+        raise ConnectionError(f"Erro ao conectar ao banco de governança (192.168.0.5): {str(e)}")
+
+
+async def get_agent_detail(agent_id: str) -> Optional[AgentDetail]:
+    """Retorna detalhes completos de um agente consultando o banco de dados."""
+    db = SessionLocal()
+    try:
+        from app.services.platform import agent_governance_service
+        config = agent_governance_service.resolve_full_agent(db, agent_id)
+        if not config:
+            return None
+
+        from app.agents.prompt_builder import load_base_prompt
+        try:
+            full_prompt = load_base_prompt(config)
+            prompt_preview = full_prompt[:500] + "..." if len(full_prompt) > 500 else full_prompt
+        except Exception:
+            prompt_preview = None
+
+        return AgentDetail(
             id=config.id,
             name=config.name,
             description=config.description,
             type=config.type,
             model=config.model,
+            icon=config.icon,
             database_name=config.database.name if config.database else None,
+            database=config.database,
             skills=config.skills,
             is_online=True,
+            prompt_preview=prompt_preview,
+            permissions=config.permissions,
+            guards=config.guards,
+            behavior=config.behavior,
         )
-        summaries.append(summary)
-    
-    return summaries
-
-
-async def get_agent_detail(agent_id: str) -> Optional[AgentDetail]:
-    """Retorna detalhes completos de um agente."""
-    config = agent_registry.get(agent_id)
-    if not config:
-        return None
-
-    from app.agents.prompt_builder import load_base_prompt
-    try:
-        prompt_preview = load_base_prompt(config)[:500] + "..." if len(load_base_prompt(config)) > 500 else load_base_prompt(config)
-    except Exception:
-        prompt_preview = None
-
-    return AgentDetail(
-        id=config.id,
-        name=config.name,
-        description=config.description,
-        type=config.type,
-        model=config.model,
-        database_name=config.database.name if config.database else None,
-        skills=config.skills,
-        is_online=True,
-        prompt_preview=prompt_preview,
-        permissions=config.permissions,
-        guards=config.guards,
-        behavior=config.behavior,
-    )
+    finally:
+        db.close()
 
 
 async def test_agent_target_db_connection(agent_id: str) -> dict:
@@ -204,3 +244,78 @@ async def test_agent_target_db_connection(agent_id: str) -> dict:
         }
     finally:
         db.close()
+
+
+async def update_agent(agent_id: str, data: AgentUpdate, db_session: Optional[SessionLocal] = None) -> List[AgentSummary]:
+    """
+    Atualiza um agente existente:
+    1. Atualiza metadados na tabela 'agents'
+    2. Atualiza binding de banco (V1)
+    3. Atualiza binding de LLM se o model mudar
+    """
+    from app.schemas.agent import AgentSummary
+    own_session = False
+    if db_session is None:
+        db_session = SessionLocal()
+        own_session = True
+
+    try:
+        agent = db_session.query(db_models.Agent).filter(db_models.Agent.id == agent_id).first()
+        if not agent:
+            raise ValueError(f"Agente '{agent_id}' não encontrado")
+
+        if data.name is not None: agent.name = data.name
+        if data.description is not None: agent.description = data.description
+        if data.type is not None: agent.agent_type = data.type
+        if data.icon is not None: agent.icon = data.icon
+
+        # Atualizar Banco (Target DB)
+        if data.database:
+            binding = db_session.query(db_models.AgentDatabaseBinding).filter(db_models.AgentDatabaseBinding.agent_id == agent_id).first()
+            if not binding:
+                binding = db_models.AgentDatabaseBinding(agent_id=agent_id, connects_to=agent_id, db_type="mysql", is_active=True, is_default=True)
+                db_session.add(binding)
+            
+            binding.host = data.database.host
+            binding.port = data.database.port
+            binding.database_name = data.database.name
+            binding.username = data.database.user
+            if data.database.password:
+                binding.password = data.database.password
+
+        # Atualizar LLM
+        model_to_use = data.model
+        if model_to_use:
+            # Desativa bindings anteriores e cria/ativa o novo
+            db_session.query(db_models.AgentLLMBinding).filter(db_models.AgentLLMBinding.agent_id == agent_id).update({"is_primary": False})
+            
+            llm_model = db_session.query(db_models.LLMModel).filter(db_models.LLMModel.model_identifier == model_to_use).first()
+            if llm_model:
+                binding = db_session.query(db_models.AgentLLMBinding).filter(
+                    db_models.AgentLLMBinding.agent_id == agent_id,
+                    db_models.AgentLLMBinding.model_id == llm_model.id
+                ).first()
+                
+                if binding:
+                    binding.is_primary = True
+                    binding.is_active = True
+                else:
+                    new_binding = db_models.AgentLLMBinding(
+                        agent_id=agent_id,
+                        provider_id=llm_model.provider_id,
+                        model_id=llm_model.id,
+                        is_primary=True,
+                        is_active=True
+                    )
+                    db_session.add(new_binding)
+
+        db_session.commit()
+        # Retorna a lista atualizada
+        return await list_agents()
+    except Exception as e:
+        db_session.rollback()
+        logger.error(f"Erro ao atualizar agente '{agent_id}': {e}")
+        raise e
+    finally:
+        if own_session:
+            db_session.close()

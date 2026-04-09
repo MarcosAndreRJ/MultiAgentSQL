@@ -858,35 +858,106 @@ function bindSkillsModalEvents(box) {
 // ═══════════════════════════════════════════════════════════════
 //  DETALHES DO AGENTE
 // ═══════════════════════════════════════════════════════════════
-function openCurrentAgentDetailsPanel() {
-  const ag = state.agents.find(a => a.id === state.activeAgent);
-  if (!ag) return;
+async function openCurrentAgentDetailsPanel() {
+  const agentId = state.activeAgent;
+  if (!agentId) return;
+
+  // Mostra loading rápido ou busca dados antes de renderizar
+  let ag = state.agents.find(a => a.id === agentId);
+  
+  try {
+    // Busca dados detalhados (incluindo database completo) da API
+    const res = await fetch(`/api/agents/${agentId}`);
+    const d = await res.json();
+    if (d.ok && d.agent) {
+      ag = d.agent;
+    }
+  } catch (e) {
+    console.error("Erro ao buscar detalhes do agente:", e);
+  }
+
+  // Busca modelos para o select
+  let modelOptions = '<option value="">(Automático - Melhor disponível)</option>';
+  try {
+    const models = await api.getModels();
+    models.forEach(m => {
+      const selected = m.model_id === (ag.llmModel || ag.model) ? 'selected' : '';
+      modelOptions += `<option value="${escapeAttr(m.model_id)}" ${selected}>${escapeHtml(m.display_name)} (${m.provider_name})</option>`;
+    });
+  } catch (e) { console.error("Erro ao carregar modelos:", e); }
 
   const container = document.createElement('div');
   container.className = 'ws-right-panel';
   container.innerHTML = `
     <div class="ws-panel-header">
       <button id="ws-det-back" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;">←</button>
-      <span style="flex:1;">Detalhes do Agente</span>
+      <span style="flex:1;">Configurações do Agente</span>
       <button id="ws-det-close" style="background:none;border:none;cursor:pointer;color:var(--muted);">✕</button>
     </div>
     <div class="ws-panel-body">
       <form class="config-form" id="ws-det-form">
-        <div class="config-section-title">Identificação</div>
-        <div class="config-field">
-          <label>NOME</label>
-          <input class="input-cfg" id="det-name" value="${escapeAttr(ag.name)}" ${ag.id === 'main' ? 'disabled' : ''} required />
+        <div class="modal-sections">
+          <div class="modal-section">
+            <h5>Identidade</h5>
+            <div class="form-grid">
+              <div class="config-field">
+                <label>NOME</label>
+                <input class="input-cfg" id="det-name" value="${escapeAttr(ag.name)}" ${ag.id === 'main' ? 'disabled' : ''} required />
+              </div>
+              <div class="config-field">
+                <label>TIPO</label>
+                <select id="det-type" class="input-cfg">
+                  <option value="mysql-specialist" ${ag.type === 'mysql-specialist' ? 'selected' : ''}>DBA (MySQL Expert)</option>
+                  <option value="mockdata" ${ag.type === 'mockdata' ? 'selected' : ''}>MockData Service</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-section">
+            <h5>Lógica & Modelo</h5>
+            <div class="config-field">
+              <label>CUSTOM PROMPT</label>
+              <textarea class="input-cfg" id="det-desc" rows="10" placeholder="Defina o comportamento do agente...">${escapeHtml(ag.description || '')}</textarea>
+            </div>
+            <div class="config-field" style="margin-top:8px">
+              <label>MODELO LLM</label>
+              <select id="det-model" class="input-cfg">
+                ${modelOptions}
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-section">
+            <h5>Conexão de Banco</h5>
+            <div class="form-grid">
+              <div class="config-field">
+                <label>HOST</label>
+                <input id="det-db-host" class="input-cfg" value="${escapeAttr(ag.database?.host || '')}" placeholder="localhost" />
+              </div>
+              <div class="config-field">
+                <label>PORTA</label>
+                <input id="det-db-port" class="input-cfg" type="number" value="${ag.database?.port || 3306}" />
+              </div>
+            </div>
+            <div class="form-grid" style="margin-top:8px">
+              <div class="config-field">
+                <label>USER</label>
+                <input id="det-db-user" class="input-cfg" value="${escapeAttr(ag.database?.user || '')}" />
+              </div>
+              <div class="config-field">
+                <label>DATABASE</label>
+                <input id="det-db-name" class="input-cfg" value="${escapeAttr(ag.database?.name || '')}" />
+              </div>
+            </div>
+            <div class="config-field" style="margin-top:8px">
+              <label>PASSWORD</label>
+              <input id="det-db-pass" type="password" class="input-cfg" placeholder="Deixe em branco para não alterar" />
+            </div>
+          </div>
         </div>
-        <div class="config-section-title" style="margin-top:18px">Instruções</div>
-        <div class="config-field">
-          <label>CUSTOM PROMPT</label>
-          <textarea class="input-cfg" id="det-desc" rows="12" placeholder="Defina o comportamento do agente...">${escapeHtml(ag.description || '')}</textarea>
-        </div>
-        <div class="config-field" style="margin-top:8px">
-          <label>Modelo LLM</label>
-          <input class="input-cfg" id="det-model" value="${escapeAttr(ag.llmModel || '')}" placeholder="Deixe em branco para usar o padrão" />
-        </div>
-        <button type="submit" class="btn-save" style="margin-top:auto;">Salvar Agente</button>
+        
+        <button type="submit" class="btn-save" style="margin-top:20px;">Salvar Alterações</button>
       </form>
     </div>
   `;
@@ -899,74 +970,174 @@ function openCurrentAgentDetailsPanel() {
   container.querySelector('#ws-det-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = container.querySelector('#det-name').value.trim();
-    const desc = container.querySelector('#det-desc').value.trim();
-    const model = container.querySelector('#det-model').value.trim();
+    const type = container.querySelector('#det-type').value;
+    const description = container.querySelector('#det-desc').value.trim();
+    const llmModel = container.querySelector('#det-model').value.trim();
+    
+    const dbHost = container.querySelector('#det-db-host').value.trim();
+    const dbPort = parseInt(container.querySelector('#det-db-port').value);
+    const dbUser = container.querySelector('#det-db-user').value.trim();
+    const dbName = container.querySelector('#det-db-name').value.trim();
+    const dbPass = container.querySelector('#det-db-pass').value;
+
+    const payload = { 
+      name, 
+      type, 
+      description, 
+      model: llmModel || null 
+    };
+
+    if (dbHost && dbUser && dbName) {
+      payload.database = {
+        host: dbHost,
+        port: dbPort,
+        user: dbUser,
+        name: dbName,
+        password: dbPass
+      };
+    }
+
     try {
-      await api.updateAgent(ag.id, { name, description: desc, llmModel: model });
-      ag.name = name; ag.description = desc; ag.llmModel = model;
+      await api.updateAgent(ag.id, payload);
+      Object.assign(ag, payload);
       if (state.activeAgent === ag.id) updateCurrentAgent();
       renderAgentList();
-      toast('Agente salvo!', 'success');
-    } catch (_) { toast('Erro ao salvar agente', 'danger'); }
+      toast('Agente atualizado com sucesso!', 'success');
+    } catch (err) { 
+      toast(`Erro: ${err.message}`, 'danger'); 
+    }
   });
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  CRIAR NOVO AGENTE
 // ═══════════════════════════════════════════════════════════════
-function openNewAgentModal() {
+async function openNewAgentModal() {
+  // Busca modelos para o select
+  let modelOptions = '<option value="">(Automático - Melhor disponível)</option>';
+  try {
+    const models = await api.getModels();
+    models.forEach(m => {
+      modelOptions += `<option value="${escapeAttr(m.model_id)}">${escapeHtml(m.display_name)} (${m.provider_name})</option>`;
+    });
+  } catch (e) { console.error("Erro ao carregar modelos:", e); }
+
   const { el: box } = openModal({
-    title: 'Configurações do Agente',
+    title: 'Novo Agente Especialista',
+    size: 'lg',
     body: `
-      <form id="new-agent-form">
-        <div class="form-group">
-          <label class="form-label">NOME DO AGENTE</label>
-          <input id="new-ag-name" class="form-input" placeholder="Ex: Canvas AI" required />
+      <div class="modal-sections">
+        <div class="modal-section">
+          <h5>Identidade & Propósito</h5>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">NOME DO AGENTE</label>
+              <input id="new-ag-name" class="form-input" placeholder="Ex: MySQL Expert" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">TIPO</label>
+              <select id="new-ag-type" class="form-input">
+                <option value="mysql-specialist">DBA (MySQL Specialist)</option>
+                <option value="mockdata">MockData Service</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">PROMPT DE INSTRUÇÕES</label>
+            <textarea id="new-ag-prompt" class="form-input" rows="4" placeholder="Descreva como o agente deve se comportar..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">MODELO LLM</label>
+            <select id="new-ag-model" class="form-input">
+              ${modelOptions}
+            </select>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">PROMPT DE INSTRUÇÕES</label>
-          <textarea id="new-ag-prompt" class="form-input" rows="4" placeholder="Descreva como o agente deve se comportar..."></textarea>
-          <span class="form-hint">Este prompt define o comportamento do agente durante as interações.</span>
+
+        <div class="modal-section">
+          <h5>Conexão de Banco (Opcional)</h5>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">HOST</label>
+              <input id="new-db-host" class="form-input" placeholder="localhost" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">PORTA</label>
+              <input id="new-db-port" class="form-input" type="number" value="3306" />
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">USUÁRIO</label>
+              <input id="new-db-user" class="form-input" placeholder="root" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">DATABASE</label>
+              <input id="new-db-name" class="form-input" placeholder="db_name" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">SENHA</label>
+            <input id="new-db-pass" type="password" class="form-input" placeholder="****" />
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">MODELO LLM (OPCIONAL)</label>
-          <input id="new-ag-model" class="form-input" placeholder="Deixe em branco para usar o padrão" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">ARQUIVOS DE ESPECIALIDADE (OPCIONAL)</label>
-          <input type="file" id="new-ag-files" multiple accept=".md,.txt,.json,.csv" class="form-input" />
-          <span class="form-hint">Faça o upload de bases de conhecimento.</span>
-        </div>
-      </form>
+      </div>
     `,
     actions: [
       { label: 'Cancelar', type: 'ghost', onClick: (close) => close() },
       {
-        label: 'Salvar Alterações',
+        label: 'Criar Agente',
         type: 'primary',
         onClick: async (close) => {
           const name = document.getElementById('new-ag-name')?.value.trim();
-          const prompt = document.getElementById('new-ag-prompt')?.value.trim();
-          const model = document.getElementById('new-ag-model')?.value.trim();
-          const filesEl = document.getElementById('new-ag-files');
+          const type = document.getElementById('new-ag-type')?.value;
+          const description = document.getElementById('new-ag-prompt')?.value.trim();
+          const llmModel = document.getElementById('new-ag-model')?.value;
+
+          const dbHost = document.getElementById('new-db-host')?.value.trim();
+          const dbPort = parseInt(document.getElementById('new-db-port')?.value);
+          const dbUser = document.getElementById('new-db-user')?.value.trim();
+          const dbName = document.getElementById('new-db-name')?.value.trim();
+          const dbPass = document.getElementById('new-db-pass')?.value;
+
           if (!name) return;
 
-          const formData = new FormData();
-          formData.append('name', name);
-          formData.append('description', prompt);
-          formData.append('llmModel', model);
-          if (filesEl) for (const f of filesEl.files) formData.append('files', f);
+          const payload = {
+            name,
+            type,
+            description,
+            model: llmModel || null
+          };
+
+          if (dbHost && dbUser && dbName) {
+            payload.database = {
+              host: dbHost,
+              port: dbPort,
+              user: dbUser,
+              name: dbName,
+              password: dbPass
+            };
+          }
 
           try {
-            const d = await fetch('/api/agents', { method: 'POST', body: formData }).then(r => r.json());
-            if (d.ok) {
-              state.agents.push(d.agent);
-              state.messagesByAgent[d.agent.id] = [];
-              switchAgent(d.agent.id);
-              toast(`Agente "${name}" criado!`, 'success');
+            const data = await fetch('/api/agents', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            }).then(r => r.json());
+
+            if (data.ok) {
+              state.agents.push(data.agent);
+              state.messagesByAgent[data.agent.id] = [];
+              switchAgent(data.agent.id);
+              toast(`Agente "${name}" criado com sucesso!`, 'success');
               close();
+            } else {
+              toast(`Falha ao criar agente: ${data.message || 'Erro desconhecido'}`, 'danger');
             }
-          } catch (_) { toast('Erro ao criar agente', 'danger'); }
+          } catch (err) {
+            toast(`Erro de conexão: ${err.message}`, 'danger');
+          }
         },
       },
     ],

@@ -30,16 +30,41 @@ async def send_message(msg: ChatMessage, db: Session = Depends(get_db)):
     return await process_message(msg, db=db)
 
 
-@router.get("/{session_id}/history")
-async def get_history(session_id: str):
-    """Retorna histórico de mensagens da sessão."""
+@router.get("/history/{session_id}/{agent_id}")
+async def get_history(session_id: str, agent_id: str):
+    """
+    Retorna histórico de mensagens da sessão filtrado por agente.
+    Formato compatível com o frontend: { ok: true, messages: [...] }
+    """
     session = session_store.get(session_id)
+    
+    # Se a sessão não existir, retorna lista vazia (UX amigável para chat novo)
     if not session:
-        raise HTTPException(status_code=404, detail="Sessão não encontrada")
+        return {
+            "ok": True,
+            "session_id": session_id,
+            "agent_id": agent_id,
+            "messages": [],
+            "pending_actions": [],
+        }
+    
+    # Mapear histórico para formato esperado (createdAt em vez de timestamp)
+    messages = []
+    for m in session.history:
+        messages.append({
+            "id": m.id,
+            "role": m.role,
+            "content": m.content,
+            "type": m.type,
+            "metadata": m.metadata,
+            "createdAt": m.timestamp.isoformat() if m.timestamp else None
+        })
+
     return {
+        "ok": True,
         "session_id": session_id,
         "agent_id": session.agent_id,
-        "history": session.history,
+        "messages": messages,
         "pending_actions": session.pending_actions,
         "current_goal": session.current_goal,
     }

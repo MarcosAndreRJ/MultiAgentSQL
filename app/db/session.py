@@ -64,5 +64,19 @@ def init_db():
         from app.db import models
         Base.metadata.create_all(bind=engine)
         logger.info("Tabelas do sistema inicializadas com sucesso.")
+
+        # 3. Auto-Migração: Verificar colunas específicas (como 'icon')
+        try:
+            with engine.connect() as conn:
+                # Verifica se a coluna 'icon' existe na tabela 'agents'
+                result = conn.execute(text("SHOW COLUMNS FROM agents LIKE 'icon'"))
+                if not result.fetchone():
+                    logger.info("Coluna 'icon' não encontrada na tabela 'agents'. Adicionando...")
+                    conn.execute(text("ALTER TABLE agents ADD COLUMN icon VARCHAR(20) DEFAULT '🤖' AFTER agent_type"))
+                    conn.commit()
+                    logger.info("Coluna 'icon' adicionada com sucesso.")
+        except Exception as mig_err:
+            logger.warning(f"Aviso na auto-migração: {mig_err}")
+
     except SQLAlchemyError as e:
         logger.error(f"Erro ao inicializar tabelas do banco: {str(e)}")

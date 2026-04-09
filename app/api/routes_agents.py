@@ -15,7 +15,7 @@ from app.services import agent_service
 from app.services.chat_service import reload_agents
 from app.services.platform import agent_governance_service
 from app.services.target_db import query_service
-from app.schemas.agent import AgentCreate
+from app.schemas.agent import AgentCreate, AgentUpdate
 
 router = APIRouter(prefix="/api/agents", tags=["agents"])
 
@@ -24,7 +24,7 @@ class AgentQueryRequest(BaseModel):
     query: str
 
 
-@router.post("/", response_model=dict)
+@router.post("", response_model=dict)
 async def create_agent(payload: AgentCreate, db: Session = Depends(get_db)):
     """Cria um novo agente."""
     try:
@@ -34,10 +34,25 @@ async def create_agent(payload: AgentCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/")
+@router.get("")
 async def list_agents():
     """Lista todos os agentes configurados."""
-    return await agent_service.list_agents()
+    agents = await agent_service.list_agents()
+    return {"agents": agents}
+
+
+@router.put("/{agent_id}")
+async def update_agent(agent_id: str, payload: AgentUpdate, db: Session = Depends(get_db)):
+    """Atualiza as configurações de um agente."""
+    try:
+        agents = await agent_service.update_agent(agent_id, payload, db)
+        return {"ok": True, "agents": agents}
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 
 
 @router.get("/{agent_id}")

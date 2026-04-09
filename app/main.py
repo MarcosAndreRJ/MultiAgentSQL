@@ -15,6 +15,7 @@ from app.core import agent_registry
 from app.core.logger import get_logger
 from app.tools.db_connection_manager import close_all
 from app.db.session import init_db, SessionLocal
+from sqlalchemy.exc import SQLAlchemyError
 from app.services.dashboard import providers_service, models_service
 from app.services.sentinel.scheduler_service import start_sentinel
 
@@ -104,6 +105,32 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     return JSONResponse(
         status_code=422,
         content={"detail": friendly_msg},
+    )
+
+
+@app.exception_handler(ConnectionError)
+async def db_connection_exception_handler(request: Request, exc: ConnectionError):
+    """Handler para erros de conexão (ex: banco offline)."""
+    logger.error(f"Erro de conexão detectado: {exc}")
+    return JSONResponse(
+        status_code=503,
+        content={"detail": str(exc)},
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    """Handler para erros gerais do SQLAlchemy."""
+    logger.error(f"Erro de banco de dados (SQLAlchemy): {exc}")
+    # Se for falha crítica de conexão, retornamos 503
+    if "Connection refused" in str(exc) or "2003" in str(exc) or "Can't connect" in str(exc):
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "O banco de dados de plataforma (192.168.0.5) não está respondendo. Verifique se o serviço MySQL está ativo e se o firewall permite conexões externas."},
+        )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno no processamento do banco de dados."},
     )
 
 # Registrar routers da API

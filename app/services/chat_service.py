@@ -50,10 +50,11 @@ def get_agent_instance(agent_id: str, db: Optional[Session] = None) -> Optional[
             logger.warning(f"Tentativa de acesso a agente inativo: {agent_id}")
             return None
 
-        # Carregar o AgentConfig legado para compatibilidade com os construtores atuais
-        # TODO: Refatorar Agentes para aceitar AgentRuntimeConfig diretamente no futuro
-        config = agent_registry.get(agent_id)
+        # Resolve a configuração completa (Pydantic AgentConfig) a partir do banco de dados (Platform DB)
+        # Fonte absoluta: Governança centralizada
+        config = agent_governance_service.resolve_full_agent(db, agent_id)
         if not config:
+            logger.error(f"Falha crítica: Configuração do agente '{agent_id}' não encontrada no banco.")
             return None
 
         if config.type == "principal":

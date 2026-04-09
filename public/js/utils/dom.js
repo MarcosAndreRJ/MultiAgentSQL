@@ -89,12 +89,13 @@ export function createTable(headers, rows) {
         td.textContent = '—';
       } else if (cell instanceof Node) {
         td.appendChild(cell);
-      } else if (typeof cell === 'string' && cell.startsWith('<')) {
-        // Fallback para quando o HTML é intencional (mas queremos evitar isso)
-        td.innerHTML = cell;
+      } else if (typeof cell === 'string' && cell.trim().startsWith('<')) {
+        // Renderiza como HTML se a string começar com '<' (mesmo com espaços)
+        td.innerHTML = cell.trim();
       } else {
         td.textContent = String(cell);
       }
+
       tr.appendChild(td);
     }
     tbody.appendChild(tr);
