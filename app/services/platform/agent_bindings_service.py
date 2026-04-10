@@ -16,14 +16,6 @@ def get_agent_llm_bindings(db: Session, agent_id: str) -> List[models.AgentLLMBi
     return list_agent_llm_bindings(db, agent_id)
 
 
-def get_agent_database_bindings(db: Session, agent_id: str) -> List[models.AgentDatabaseBinding]:
-    """Compat wrapper para listagem de bindings target_db legados."""
-    if not platform_db_state.is_platform_db_connected():
-        return []
-    return db.query(models.AgentDatabaseBinding).filter(
-        models.AgentDatabaseBinding.agent_id == agent_id
-    ).order_by(models.AgentDatabaseBinding.is_default.desc(), models.AgentDatabaseBinding.id.asc()).all()
-
 
 def get_agent_runtime_binding_summary(db: Session, agent_id: str) -> Optional[dict]:
     """Resumo mínimo de bindings ativos por agente (compatibilidade de rota rascunho)."""
@@ -31,7 +23,14 @@ def get_agent_runtime_binding_summary(db: Session, agent_id: str) -> Optional[di
         return None
 
     llm_default = get_agent_primary_llm(db, agent_id)
-    target_default = resolve_agent_target_db_binding(db, agent_id)
+    
+    from app.services.platform.agent_database_binding_service import resolve_agent_database_binding
+    target_default = None
+    try:
+        target_default = resolve_agent_database_binding(db, agent_id)
+    except ValueError:
+        pass
+
     status = "ok" if (llm_default is not None or target_default is not None) else "empty"
 
     return {
@@ -52,23 +51,12 @@ def list_agent_runtime_binding_summaries(db: Session) -> List[dict]:
     agent_ids = set()
     for row in db.query(models.AgentLLMBinding.agent_id).distinct().all():
         agent_ids.add(row[0])
-    for row in db.query(models.AgentDatabaseBinding.agent_id).distinct().all():
+    for row in db.query(models.AgentDatabaseBindingV2.agent_id).distinct().all():
         agent_ids.add(row[0])
 
     return [get_agent_runtime_binding_summary(db, aid) for aid in sorted(agent_ids)]
 
-def resolve_agent_target_db_binding(db: Session, agent_id: str) -> Optional[models.AgentDatabaseBinding]:
-    """
-    Busca o vínculo de banco de dados operacional (target_db) de um agente.
-    """
-    if not platform_db_state.is_platform_db_connected():
-        logger.warning(f"Platform DB Offline: Não é possível resolver binding para agente '{agent_id}'")
-        return None
 
-    return db.query(models.AgentDatabaseBinding).filter(
-        models.AgentDatabaseBinding.agent_id == agent_id,
-        models.AgentDatabaseBinding.is_active == True
-    ).order_by(models.AgentDatabaseBinding.is_default.desc()).first()
 
 def list_agent_llm_bindings(db: Session, agent_id: str) -> List[models.AgentLLMBinding]:
     """
@@ -93,16 +81,6 @@ def get_agent_primary_llm(db: Session, agent_id: str) -> Optional[models.AgentLL
         models.AgentLLMBinding.is_default == True
     ).first()
 
-def create_agent_db_binding(db: Session, binding_data: dict) -> models.AgentDatabaseBinding:
-    """
-    Cria um novo vínculo de target_db para um agente.
-    """
-    binding = models.AgentDatabaseBinding(**binding_data)
-    db.add(binding)
-    db.commit()
-    db.refresh(binding)
-    logger.info(f"Binding de Target DB criado | Agente: {binding.agent_id} | Host: {binding.host}")
-    return binding
 
 
 def get_agent_llm_binding(db: Session, agent_id: str) -> Optional[models.AgentLLMBinding]:

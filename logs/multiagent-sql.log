@@ -66492,3 +66492,373 @@ WHERE agents.is_active = true]
 2026-04-08 23:05:08 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
 2026-04-08 23:05:08 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
 2026-04-08 23:05:08 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 46.77s.
+2026-04-08 23:25:08 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T02:25:08.866505
+2026-04-08 23:26:16 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-08 23:26:16 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-08 23:26:16 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-08 23:26:16 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 67.71s.
+2026-04-08 23:46:16 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T02:46:16.597481
+2026-04-08 23:47:05 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-08 23:47:05 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-08 23:47:05 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-08 23:47:05 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 49.04s.
+2026-04-09 08:21:40 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T11:21:40.124137
+2026-04-09 08:22:01 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 08:22:01 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 3): Erro na sincronização de modelos: Connection error.
+2026-04-09 08:22:01 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 3: Erro na sincronização de modelos: Connection error.
+2026-04-09 08:22:17 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Request timed out.
+2026-04-09 08:22:17 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 5): Erro na sincronização de modelos: Request timed out.
+2026-04-09 08:22:17 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 5: Erro na sincronização de modelos: Request timed out.
+2026-04-09 08:22:17 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 08:22:17 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 08:22:17 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 08:22:17 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 37.66s.
+2026-04-09 08:42:17 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T11:42:17.785839
+2026-04-09 08:42:52 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 08:42:52 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 08:42:52 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 08:42:52 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 34.95s.
+2026-04-09 09:02:52 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T12:02:52.744200
+2026-04-09 09:03:10 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 09:03:10 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 09:03:10 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 09:03:10 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 17.64s.
+2026-04-09 09:23:10 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T12:23:10.390143
+2026-04-09 09:23:28 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 09:23:28 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 09:23:28 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 09:23:28 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 17.88s.
+2026-04-09 09:43:28 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T12:43:28.278641
+2026-04-09 09:43:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 09:43:56 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 09:43:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 09:43:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 28.31s.
+2026-04-09 10:03:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T13:03:56.596393
+2026-04-09 10:04:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 10:04:11 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 10:04:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 10:04:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 14.52s.
+2026-04-09 10:24:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T13:24:11.120548
+2026-04-09 10:24:25 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 10:24:26 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 10:24:26 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 10:24:26 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 14.92s.
+2026-04-09 10:44:26 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T13:44:26.054748
+2026-04-09 10:44:42 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 10:44:42 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 10:44:42 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 10:44:42 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 16.39s.
+2026-04-09 11:04:42 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T14:04:42.457856
+2026-04-09 11:04:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 11:04:56 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 11:04:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 11:04:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 14.07s.
+2026-04-09 11:24:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T14:24:56.530504
+2026-04-09 11:25:10 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 11:25:10 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 11:25:10 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 11:25:10 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 13.69s.
+2026-04-09 11:45:10 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T14:45:10.225506
+2026-04-09 11:45:24 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 11:45:24 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 11:45:24 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 11:45:24 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 14.13s.
+2026-04-09 12:05:24 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T15:05:24.372365
+2026-04-09 12:05:38 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 12:05:39 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 12:05:39 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 12:05:39 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 14.63s.
+2026-04-09 12:25:39 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T15:25:39.017909
+2026-04-09 12:25:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 12:25:57 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 12:25:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 12:25:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 18.61s.
+2026-04-09 12:45:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T15:45:57.628492
+2026-04-09 12:46:14 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 12:46:14 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 3): Erro na sincronização de modelos: Connection error.
+2026-04-09 12:46:14 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 3: Erro na sincronização de modelos: Connection error.
+2026-04-09 12:46:25 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 12:46:25 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 5): Erro na sincronização de modelos: Connection error.
+2026-04-09 12:46:25 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 5: Erro na sincronização de modelos: Connection error.
+2026-04-09 12:46:25 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 12:46:25 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 12:46:25 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 12:46:25 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 28.20s.
+2026-04-09 13:06:25 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T16:06:25.837976
+2026-04-09 13:06:43 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 13:06:43 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 3): Erro na sincronização de modelos: Connection error.
+2026-04-09 13:06:43 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 3: Erro na sincronização de modelos: Connection error.
+2026-04-09 13:06:54 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Request timed out.
+2026-04-09 13:06:54 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 5): Erro na sincronização de modelos: Request timed out.
+2026-04-09 13:06:54 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 5: Erro na sincronização de modelos: Request timed out.
+2026-04-09 13:06:54 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 13:06:54 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 13:06:54 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 13:06:54 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 28.90s.
+2026-04-09 13:26:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T16:26:57.199069
+2026-04-09 13:27:14 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 13:27:14 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 13:27:14 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 13:27:14 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 17.24s.
+2026-04-09 13:47:14 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T16:47:14.451712
+2026-04-09 13:47:35 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 13:47:35 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 13:47:35 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 13:47:35 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 21.35s.
+2026-04-09 14:07:35 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T17:07:35.821688
+2026-04-09 14:07:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 14:07:57 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 14:07:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 14:07:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 21.72s.
+2026-04-09 14:27:57 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T17:27:57.546547
+2026-04-09 14:28:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 14:28:11 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 14:28:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 14:28:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 14.13s.
+2026-04-09 14:48:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T17:48:11.690784
+2026-04-09 14:48:30 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 14:48:30 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 14:48:30 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 14:48:30 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 19.07s.
+2026-04-09 15:08:30 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T18:08:30.777461
+2026-04-09 15:08:44 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 15:08:44 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 15:08:44 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 15:08:44 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 14.03s.
+2026-04-09 15:28:44 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T18:28:44.812809
+2026-04-09 15:28:59 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 15:28:59 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 15:28:59 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 15:28:59 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 14.75s.
+2026-04-09 15:48:59 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T18:48:59.568229
+2026-04-09 15:49:24 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 15:49:24 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 15:49:24 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 15:49:24 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 25.00s.
+2026-04-09 16:09:24 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T19:09:24.584018
+2026-04-09 16:09:46 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 16:09:46 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 16:09:46 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 16:09:46 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 21.89s.
+2026-04-09 16:26:50 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 16:26:56 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-09 16:26:56 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-09 16:26:56 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-09 16:26:56 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Agendador cancelado.
+2026-04-09 16:27:09 | INFO     | multiagent-sql.app | ============================================================
+2026-04-09 16:27:09 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-09 16:27:09 | INFO     | multiagent-sql.app | ============================================================
+2026-04-09 16:27:09 | INFO     | multiagent-sql.agent_registry | Agent Registry: Governança via Banco de Dados ATIVA. Ignorando arquivos YAML.
+2026-04-09 16:27:10 | INFO     | multiagent-sql.app | Agentes carregados: ['agent_5fc0979a', 'agent_b9cc483f', 'mysql-example', 'mysql-mockup', 'principal']
+2026-04-09 16:27:14 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-09 16:27:14 | INFO     | multiagent-sql.db.session | Database 'MultiAgent' verificado/criado com sucesso.
+2026-04-09 16:27:14 | INFO     | multiagent-sql.db.session | Tabelas do sistema inicializadas com sucesso.
+2026-04-09 16:27:14 | WARNING  | multiagent-sql.db.session | Aviso na auto-migração: name 'text' is not defined
+2026-04-09 16:27:14 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Ollama (Local Default) (ID: 1)
+2026-04-09 16:27:14 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 1: 'coroutine' object is not iterable
+2026-04-09 16:27:14 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Google Gemini (Cloud) (ID: 2)
+2026-04-09 16:27:14 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 2: 'coroutine' object is not iterable
+2026-04-09 16:27:14 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider openrouter (ID: 3)
+2026-04-09 16:27:19 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 3: 'coroutine' object is not iterable
+2026-04-09 16:27:19 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider ollama Cloud (ID: 4)
+2026-04-09 16:27:19 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 4: 'coroutine' object is not iterable
+2026-04-09 16:27:19 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Groq (AlcatrazBr) (ID: 5)
+2026-04-09 16:27:23 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 5: 'coroutine' object is not iterable
+2026-04-09 16:27:23 | INFO     | multiagent-sql.app | Fundação MySQL: Sincronizada e PRONTA em 192.168.0.5
+2026-04-09 16:27:23 | INFO     | multiagent-sql.app | MultiAgent SQL - Sistema Operacional!
+2026-04-09 16:27:23 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Agendador iniciado (Intervalo: 20 min).
+2026-04-09 16:27:23 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 16:27:53 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T19:27:53.163386
+2026-04-09 16:28:38 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 16:28:38 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 16:28:38 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 16:28:38 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 45.36s.
+2026-04-09 16:29:17 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 16:29:26 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:26 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:26 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:26 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:32 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:32 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:34 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:34 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:38 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:38 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:38 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:38 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:50 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:50 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:50 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:50 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:57 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:29:57 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 16:48:38 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T19:48:38.525554
+2026-04-09 16:49:01 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 16:49:01 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 16:49:01 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 16:49:01 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 23.38s.
+2026-04-09 17:09:01 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T20:09:01.908827
+2026-04-09 17:09:29 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 17:09:29 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 17:09:29 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 17:09:29 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 27.44s.
+2026-04-09 17:29:29 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T20:29:29.366904
+2026-04-09 17:30:01 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 17:30:01 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 17:30:01 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 17:30:01 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 32.02s.
+2026-04-09 17:50:01 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T20:50:01.392676
+2026-04-09 17:50:19 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 17:50:19 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 17:50:19 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 17:50:19 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 18.51s.
+2026-04-09 17:55:37 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 17:55:37 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 17:55:39 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 17:55:39 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): "AgentRuntimeConfig" object has no field "db_port"
+2026-04-09 18:10:19 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T21:10:19.911411
+2026-04-09 18:10:33 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 18:10:33 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 18:10:33 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 18:10:33 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 13.66s.
+2026-04-09 18:30:33 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T21:30:33.589384
+2026-04-09 18:30:44 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 18:30:44 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 3): Erro na sincronização de modelos: Connection error.
+2026-04-09 18:30:44 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 3: Erro na sincronização de modelos: Connection error.
+2026-04-09 18:30:51 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 18:30:51 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 5): Erro na sincronização de modelos: Connection error.
+2026-04-09 18:30:51 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 5: Erro na sincronização de modelos: Connection error.
+2026-04-09 18:30:51 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 18:30:51 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 18:30:51 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 18:30:51 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 17.92s.
+2026-04-09 18:50:51 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T21:50:51.521700
+2026-04-09 18:50:58 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 18:50:58 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 3): Erro na sincronização de modelos: Connection error.
+2026-04-09 18:50:58 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 3: Erro na sincronização de modelos: Connection error.
+2026-04-09 18:51:17 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 18:51:17 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 5): Erro na sincronização de modelos: Connection error.
+2026-04-09 18:51:17 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 5: Erro na sincronização de modelos: Connection error.
+2026-04-09 18:51:17 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 18:51:17 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 18:51:17 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 18:51:17 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 25.74s.
+2026-04-09 19:11:17 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T22:11:17.270306
+2026-04-09 19:11:29 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 19:11:29 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 3): Erro na sincronização de modelos: Connection error.
+2026-04-09 19:11:29 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 3: Erro na sincronização de modelos: Connection error.
+2026-04-09 19:11:37 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 19:11:37 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 5): Erro na sincronização de modelos: Connection error.
+2026-04-09 19:11:37 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 5: Erro na sincronização de modelos: Connection error.
+2026-04-09 19:11:37 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 19:11:37 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 19:11:37 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 19:11:37 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 20.05s.
+2026-04-09 19:31:37 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-09T22:31:37.330901
+2026-04-09 19:31:55 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 19:31:55 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 3): Erro na sincronização de modelos: Connection error.
+2026-04-09 19:31:55 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 3: Erro na sincronização de modelos: Connection error.
+2026-04-09 19:32:12 | ERROR    | multiagent-sql.providers.openai | Falha ao listar modelos OpenAI: Connection error.
+2026-04-09 19:32:12 | ERROR    | multiagent-sql.services.platform.provider_service | Erro no sync de modelos (Provider: 5): Erro na sincronização de modelos: Connection error.
+2026-04-09 19:32:12 | ERROR    | multiagent-sql.sentinel.monitor | Erro no monitoramento do provider 5: Erro na sincronização de modelos: Connection error.
+2026-04-09 19:32:12 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 19:32:12 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 19:32:12 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 19:32:12 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 35.48s.
+2026-04-09 22:06:11 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-10T01:06:11.769411
+2026-04-09 22:06:27 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 22:06:27 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 22:06:27 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 22:06:27 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 15.31s.
+2026-04-09 22:20:00 | ERROR    | multiagent-sql.agent_service | Falha de conexão com o banco de dados de plataforma: (mysql.connector.errors.ProgrammingError) 1146 (42S02): Table 'MultiAgent.agent_database_bindings' doesn't exist
+[SQL: SELECT agent_database_bindings.id AS agent_database_bindings_id, agent_database_bindings.agent_id AS agent_database_bindings_agent_id, agent_database_bindings.db_type AS agent_database_bindings_db_type, agent_database_bindings.host AS agent_database_bindings_host, agent_database_bindings.port AS agent_database_bindings_port, agent_database_bindings.database_name AS agent_database_bindings_database_name, agent_database_bindings.schema_name AS agent_database_bindings_schema_name, agent_database_bindings.username AS agent_database_bindings_username, agent_database_bindings.password AS agent_database_bindings_password, agent_database_bindings.connection_label AS agent_database_bindings_connection_label, agent_database_bindings.is_active AS agent_database_bindings_is_active, agent_database_bindings.is_default AS agent_database_bindings_is_default, agent_database_bindings.read_only AS agent_database_bindings_read_only, agent_database_bindings.created_at AS agent_database_bindings_created_at, agent_database_bindings.updated_at AS agent_database_bindings_updated_at 
+FROM agent_database_bindings 
+WHERE agent_database_bindings.agent_id = %(agent_id_1)s AND agent_database_bindings.is_active = true 
+ LIMIT %(param_1)s]
+[parameters: {'agent_id_1': 'principal', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-09 22:20:00 | ERROR    | multiagent-sql.app | Erro de conexão detectado: Erro ao conectar ao banco de governança (192.168.0.5): (mysql.connector.errors.ProgrammingError) 1146 (42S02): Table 'MultiAgent.agent_database_bindings' doesn't exist
+[SQL: SELECT agent_database_bindings.id AS agent_database_bindings_id, agent_database_bindings.agent_id AS agent_database_bindings_agent_id, agent_database_bindings.db_type AS agent_database_bindings_db_type, agent_database_bindings.host AS agent_database_bindings_host, agent_database_bindings.port AS agent_database_bindings_port, agent_database_bindings.database_name AS agent_database_bindings_database_name, agent_database_bindings.schema_name AS agent_database_bindings_schema_name, agent_database_bindings.username AS agent_database_bindings_username, agent_database_bindings.password AS agent_database_bindings_password, agent_database_bindings.connection_label AS agent_database_bindings_connection_label, agent_database_bindings.is_active AS agent_database_bindings_is_active, agent_database_bindings.is_default AS agent_database_bindings_is_default, agent_database_bindings.read_only AS agent_database_bindings_read_only, agent_database_bindings.created_at AS agent_database_bindings_created_at, agent_database_bindings.updated_at AS agent_database_bindings_updated_at 
+FROM agent_database_bindings 
+WHERE agent_database_bindings.agent_id = %(agent_id_1)s AND agent_database_bindings.is_active = true 
+ LIMIT %(param_1)s]
+[parameters: {'agent_id_1': 'principal', 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+2026-04-09 22:20:15 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-09 22:20:15 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-09 22:20:15 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-09 22:20:15 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Agendador cancelado.
+2026-04-09 22:20:28 | INFO     | multiagent-sql.app | ============================================================
+2026-04-09 22:20:28 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-09 22:20:28 | INFO     | multiagent-sql.app | ============================================================
+2026-04-09 22:20:28 | INFO     | multiagent-sql.agent_registry | Agent Registry: Governança via Banco de Dados ATIVA. Ignorando arquivos YAML.
+2026-04-09 22:20:28 | INFO     | multiagent-sql.app | Agentes carregados: ['agent_5fc0979a', 'agent_b9cc483f', 'mysql-example', 'mysql-mockup', 'principal']
+2026-04-09 22:20:34 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-09 22:20:34 | INFO     | multiagent-sql.db.session | Database 'MultiAgent' verificado/criado com sucesso.
+2026-04-09 22:20:34 | INFO     | multiagent-sql.db.session | Tabelas do sistema inicializadas com sucesso.
+2026-04-09 22:20:34 | WARNING  | multiagent-sql.db.session | Aviso na auto-migração: name 'text' is not defined
+2026-04-09 22:20:34 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Ollama (Local Default) (ID: 1)
+2026-04-09 22:20:34 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 1: 'coroutine' object is not iterable
+2026-04-09 22:20:34 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Google Gemini (Cloud) (ID: 2)
+2026-04-09 22:20:34 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 2: 'coroutine' object is not iterable
+2026-04-09 22:20:34 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider openrouter (ID: 3)
+2026-04-09 22:20:36 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 3: 'coroutine' object is not iterable
+2026-04-09 22:20:36 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider ollama Cloud (ID: 4)
+2026-04-09 22:20:36 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 4: 'coroutine' object is not iterable
+2026-04-09 22:20:36 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Groq (AlcatrazBr) (ID: 5)
+2026-04-09 22:20:39 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 5: 'coroutine' object is not iterable
+2026-04-09 22:20:39 | INFO     | multiagent-sql.app | Fundação MySQL: Sincronizada e PRONTA em 192.168.0.5
+2026-04-09 22:20:39 | INFO     | multiagent-sql.app | MultiAgent SQL - Sistema Operacional!
+2026-04-09 22:20:39 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Agendador iniciado (Intervalo: 20 min).
+2026-04-09 22:21:02 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:21:09 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-10T01:21:09.319549
+2026-04-09 22:21:13 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:21:13 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:21:13 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:21:29 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 22:21:29 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 22:21:29 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 22:21:29 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 20.26s.
+2026-04-09 22:21:42 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:21:50 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:22:00 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:34:37 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:34:43 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:34:48 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-09 22:34:48 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-09 22:34:48 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-09 22:34:48 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Agendador cancelado.
+2026-04-09 22:35:00 | INFO     | multiagent-sql.app | ============================================================
+2026-04-09 22:35:00 | INFO     | multiagent-sql.app | MultiAgent SQL - Iniciando...
+2026-04-09 22:35:00 | INFO     | multiagent-sql.app | ============================================================
+2026-04-09 22:35:00 | INFO     | multiagent-sql.agent_registry | Agent Registry: Governança via Banco de Dados ATIVA. Ignorando arquivos YAML.
+2026-04-09 22:35:00 | INFO     | multiagent-sql.app | Agentes carregados: ['agent_5fc0979a', 'agent_b9cc483f', 'mysql-example', 'mysql-mockup', 'principal']
+2026-04-09 22:35:07 | WARNING  | multiagent-sql.app | Ollama não disponível: Ollama indisponível: All connection attempts failed
+2026-04-09 22:35:07 | INFO     | multiagent-sql.db.session | Database 'MultiAgent' verificado/criado com sucesso.
+2026-04-09 22:35:07 | INFO     | multiagent-sql.db.session | Tabelas do sistema inicializadas com sucesso.
+2026-04-09 22:35:07 | WARNING  | multiagent-sql.db.session | Aviso na auto-migração: name 'text' is not defined
+2026-04-09 22:35:07 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Ollama (Local Default) (ID: 1)
+2026-04-09 22:35:07 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 1: 'coroutine' object is not iterable
+2026-04-09 22:35:07 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Google Gemini (Cloud) (ID: 2)
+2026-04-09 22:35:07 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 2: 'coroutine' object is not iterable
+2026-04-09 22:35:07 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider openrouter (ID: 3)
+2026-04-09 22:35:10 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 3: 'coroutine' object is not iterable
+2026-04-09 22:35:10 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider ollama Cloud (ID: 4)
+2026-04-09 22:35:10 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 4: 'coroutine' object is not iterable
+2026-04-09 22:35:10 | INFO     | multiagent-sql.services.models | Sincronizando modelos para provider Groq (AlcatrazBr) (ID: 5)
+2026-04-09 22:35:13 | ERROR    | multiagent-sql.services.models | Falha ao sincronizar provider 5: 'coroutine' object is not iterable
+2026-04-09 22:35:13 | INFO     | multiagent-sql.app | Fundação MySQL: Sincronizada e PRONTA em 192.168.0.5
+2026-04-09 22:35:13 | INFO     | multiagent-sql.app | MultiAgent SQL - Sistema Operacional!
+2026-04-09 22:35:13 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Agendador iniciado (Intervalo: 20 min).
+2026-04-09 22:35:18 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:35:24 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:35:43 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Iniciando ciclo periódico às 2026-04-10T01:35:43.963294
+2026-04-09 22:36:00 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Monitoramento concluído (5 providers).
+2026-04-09 22:36:00 | INFO     | multiagent-sql.sentinel.consistency | Sentinel: Scores de consistência atualizados para 5 providers.
+2026-04-09 22:36:00 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Scores de consistência recalculados.
+2026-04-09 22:36:00 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Ciclo finalizado em 16.57s.
+2026-04-09 22:45:01 | WARNING  | multiagent-sql.prompt_builder | Arquivo de prompt não encontrado: config\prompts\base.txt
+2026-04-09 22:46:29 | INFO     | multiagent-sql.app | MultiAgent SQL - Encerrando...
+2026-04-09 22:46:29 | INFO     | multiagent-sql.db_connection_manager | Todas as conexões MySQL fechadas
+2026-04-09 22:46:29 | INFO     | multiagent-sql.app | Conexões encerradas. Bye!
+2026-04-09 22:46:29 | INFO     | multiagent-sql.sentinel.scheduler | Sentinel: Agendador cancelado.

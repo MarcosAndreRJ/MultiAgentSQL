@@ -137,36 +137,7 @@ def resolve_agent_database_binding(
     ).all()
 
     if not candidates:
-        # Compatibilidade: fallback para tabela legada de bindings (AgentDatabaseBinding).
-        # Mantém execução operacional sem depender de YAML durante transição.
-        legacy = db.query(db_models.AgentDatabaseBinding).filter(
-            db_models.AgentDatabaseBinding.agent_id == agent_id,
-            db_models.AgentDatabaseBinding.is_active == True,
-        ).order_by(
-            db_models.AgentDatabaseBinding.is_default.desc(),
-            db_models.AgentDatabaseBinding.id.asc(),
-        ).first()
-
-        if legacy is None:
-            raise ValueError(f"No active database binding found for agent '{agent_id}'")
-
-        return {
-            "source": "agent_database_bindings_legacy",
-            "agent_id": legacy.agent_id,
-            "binding_id": legacy.id,
-            "database_connection_id": None,
-            "is_default": bool(legacy.is_default),
-            "access_mode": "readonly",
-            "schema_scope": legacy.schema_name,
-            "binding_updated_at": legacy.updated_at,
-            "db_type": legacy.db_type,
-            "host": legacy.host,
-            "port": legacy.port,
-            "database_name": legacy.database_name,
-            "username": legacy.username,
-            "password": legacy.password,
-            "connection_updated_at": legacy.updated_at,
-        }
+        raise ValueError(f"No active database binding found for agent '{agent_id}'")
 
     for binding in candidates:
         conn = db.query(db_models.DatabaseConnection).filter(

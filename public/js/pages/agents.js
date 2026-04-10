@@ -65,11 +65,19 @@ export async function renderAgentsPage(container) {
       wrap.appendChild(table);
 
       wrap.querySelectorAll('[data-agent-action]').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           const { agentAction, agentId } = btn.dataset;
-          const ag = agents.find(a => a.id === agentId);
+          let ag = agents.find(a => a.id === agentId);
           if (!ag) return;
-          if (agentAction === 'edit') openAgentEditModal(ag, refreshAgents);
+
+          if (agentAction === 'edit') {
+            try {
+              const res = await fetch(`/api/agents/${agentId}`);
+              const d = await res.json();
+              if (d.ok && d.agent) ag = d.agent;
+            } catch (e) { console.error("Erro ao carregar detalhes completos:", e); }
+            openAgentEditModal(ag, refreshAgents);
+          }
           if (agentAction === 'delete') deleteAgent(ag, refreshAgents);
         });
       });

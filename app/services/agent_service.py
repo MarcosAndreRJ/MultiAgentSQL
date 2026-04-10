@@ -15,6 +15,7 @@ from app.db.session import SessionLocal
 from app.db import models as db_models
 from sqlalchemy import text
 import time
+from app.utils.crypto import encrypt_secret
 
 logger = get_logger("agent_service")
 
@@ -81,21 +82,31 @@ async def create_agent(data: AgentCreate, db_session: Optional[SessionLocal] = N
         )
         db_session.add(new_agent)
 
-        # 2. Criar Binding de Banco (Operacional)
+        # 2. Criar Binding de Banco (Operacional) V2
         if data.database:
-            binding = db_models.AgentDatabaseBinding(
-                agent_id=agent_id,
+            enc_pass = encrypt_secret(data.database.password or "")
+            db_conn = db_models.DatabaseConnection(
+                name=f"Conn_{agent_id}",
                 db_type="mysql",
                 host=data.database.host,
                 port=data.database.port,
                 database_name=data.database.name,
                 username=data.database.user,
-                password=data.database.password,
-                is_active=True,
-                is_default=True,
-                read_only=True
+                password_encrypted=enc_pass,
+                is_active=True
             )
-            db_session.add(binding)
+            db_session.add(db_conn)
+            db_session.flush() # Para pegar o db_conn.id
+            
+            bind_v2 = db_models.AgentDatabaseBindingV2(
+                agent_id=agent_id,
+                database_connection_id=db_conn.id,
+                is_default=True,
+                is_primary=True,
+                access_mode="readwrite",
+                is_active=True
+            )
+            db_session.add(bind_v2)
             
         # 3. Criar Binding de LLM (Governança)
         # Tenta vincular ao modelo escolhido
@@ -269,19 +280,53 @@ async def update_agent(agent_id: str, data: AgentUpdate, db_session: Optional[Se
         if data.type is not None: agent.agent_type = data.type
         if data.icon is not None: agent.icon = data.icon
 
-        # Atualizar Banco (Target DB)
+        # Atualizar Banco (Target DB) utilizando V2 nativo
         if data.database:
-            binding = db_session.query(db_models.AgentDatabaseBinding).filter(db_models.AgentDatabaseBinding.agent_id == agent_id).first()
-            if not binding:
-                binding = db_models.AgentDatabaseBinding(agent_id=agent_id, connects_to=agent_id, db_type="mysql", is_active=True, is_default=True)
-                db_session.add(binding)
-            
-            binding.host = data.database.host
-            binding.port = data.database.port
-            binding.database_name = data.database.name
-            binding.username = data.database.user
-            if data.database.password:
-                binding.password = data.database.password
+            # Tenta encontrar o binding primário V2
+            bind_v2 = db_session.query(db_models.AgentDatabaseBindingV2).filter(
+                db_models.AgentDatabaseBindingV2.agent_id == agent_id,
+                db_models.AgentDatabaseBindingV2.is_primary == True,
+                db_models.AgentDatabaseBindingV2.is_active == True
+            ).first()
+
+            enc_pass = encrypt_secret(data.database.password or "")
+
+            if bind_v2:
+                # Atualizar a conexão existente
+                db_conn = db_session.query(db_models.DatabaseConnection).filter(
+                    db_models.DatabaseConnection.id == bind_v2.database_connection_id
+                ).first()
+                if db_conn:
+                    db_conn.host = data.database.host
+                    db_conn.port = data.database.port
+                    db_conn.database_name = data.database.name
+                    db_conn.username = data.database.user
+                    if data.database.password:
+                        db_conn.password_encrypted = enc_pass
+            else:
+                # Não há binding V2, criar uma conexão nova + binding
+                db_conn = db_models.DatabaseConnection(
+                    name=f"Conn_{agent_id}",
+                    db_type="mysql",
+                    host=data.database.host,
+                    port=data.database.port,
+                    database_name=data.database.name,
+                    username=data.database.user,
+                    password_encrypted=enc_pass,
+                    is_active=True
+                )
+                db_session.add(db_conn)
+                db_session.flush()
+
+                new_bind = db_models.AgentDatabaseBindingV2(
+                    agent_id=agent_id,
+                    database_connection_id=db_conn.id,
+                    is_default=True,
+                    is_primary=True,
+                    access_mode="readwrite",
+                    is_active=True
+                )
+                db_session.add(new_bind)
 
         # Atualizar LLM
         model_to_use = data.model

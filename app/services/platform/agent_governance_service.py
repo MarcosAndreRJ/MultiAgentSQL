@@ -36,6 +36,9 @@ class AgentRuntimeConfig(BaseModel):
     db_connection_id: Optional[int] = None
     db_connection_name: Optional[str] = None
     db_host: Optional[str] = None
+    db_port: Optional[int] = None
+    db_username: Optional[str] = None
+    db_password: Optional[str] = None
     db_binding_active: bool = False
     
     # Flags administrativas (serializadas)
@@ -78,9 +81,8 @@ def resolve_full_agent(db: Session, agent_id: str) -> Optional[AgentConfig]:
     # Tenta V2 (normalizado)
     db_binding_v2 = db.query(db_models.AgentDatabaseBindingV2).filter(
         db_models.AgentDatabaseBindingV2.agent_id == agent_id,
-        db_models.AgentDatabaseBindingV2.is_primary == True,
         db_models.AgentDatabaseBindingV2.is_active == True
-    ).first()
+    ).order_by(db_models.AgentDatabaseBindingV2.is_default.desc()).first()
     
     if db_binding_v2:
         conn = db.query(db_models.DatabaseConnection).filter(db_models.DatabaseConnection.id == db_binding_v2.database_connection_id).first()
@@ -92,20 +94,8 @@ def resolve_full_agent(db: Session, agent_id: str) -> Optional[AgentConfig]:
                 user=conn.username,
                 password=conn.password_encrypted
             )
-    else:
-        # Tenta V1 (legado, mas persistido no DB)
-        db_binding_v1 = db.query(db_models.AgentDatabaseBinding).filter(
-            db_models.AgentDatabaseBinding.agent_id == agent_id,
-            db_models.AgentDatabaseBinding.is_active == True
-        ).first()
-        if db_binding_v1:
-            db_config = DatabaseConfig(
-                host=db_binding_v1.host,
-                port=db_binding_v1.port,
-                name=db_binding_v1.database_name,
-                user=db_binding_v1.username,
-                password=db_binding_v1.password
-            )
+
+
 
     # 3. Construir AgentConfig (Pydantic)
     try:
@@ -190,29 +180,22 @@ def _resolve_from_db(db: Session, agent: db_models.Agent) -> AgentRuntimeConfig:
         config.llm_binding_active = True
 
     # Database Binding (V2 prioritize)
-    db_binding = db.query(db_models.AgentDatabaseBindingV2).filter(
+    db_binding_v2 = db.query(db_models.AgentDatabaseBindingV2).filter(
         db_models.AgentDatabaseBindingV2.agent_id == agent.id,
-        db_models.AgentDatabaseBindingV2.is_primary == True,
         db_models.AgentDatabaseBindingV2.is_active == True
-    ).first()
+    ).order_by(db_models.AgentDatabaseBindingV2.is_default.desc()).first()
     
-    if db_binding:
-        conn = db.query(db_models.DatabaseConnection).filter(db_models.DatabaseConnection.id == db_binding.database_connection_id).first()
+    resolved_v2 = False
+    if db_binding_v2:
+        conn = db.query(db_models.DatabaseConnection).filter(db_models.DatabaseConnection.id == db_binding_v2.database_connection_id).first()
         if conn:
             config.db_connection_id = conn.id
             config.db_connection_name = conn.name
             config.db_host = conn.host
             config.db_binding_active = True
-    else:
-        # Fallback Check V1 Bindings if no V2
-        v1_binding = db.query(db_models.AgentDatabaseBinding).filter(
-            db_models.AgentDatabaseBinding.agent_id == agent.id,
-            db_models.AgentDatabaseBinding.is_active == True
-        ).first()
-        if v1_binding:
-            config.db_connection_name = v1_binding.database_name
-            config.db_host = v1_binding.host
-            config.db_binding_active = True
+            resolved_v2 = True
+    
+
 
     return config
 

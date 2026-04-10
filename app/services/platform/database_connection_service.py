@@ -6,7 +6,6 @@ from datetime import datetime
 from app.db import models as db_models
 from app.schemas.agent_bindings import AgentDatabaseBindingCreate
 from app.utils.crypto import encrypt_secret
-from app.utils.secrets import serialize_database_binding_for_output
 from app.core.logger import get_logger
 
 logger = get_logger("services.platform.database_connection")

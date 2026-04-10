@@ -55,30 +55,6 @@ class LLMModel(Base):
     provider = relationship("LLMProvider", back_populates="models")
 
 
-class AgentDatabaseBinding(Base):
-    """Vincula um agente a um banco operacional (target_db)."""
-
-    __tablename__ = "agent_database_bindings"
-    __table_args__ = (
-        UniqueConstraint("agent_id", "connection_label", name="uq_agent_db_connection_label"),
-    )
-
-    id = Column(Integer, primary_key=True, index=True)
-    agent_id = Column(String(100), nullable=False, index=True)
-    db_type = Column(String(30), nullable=False, default="mysql")
-    host = Column(String(255), nullable=False)
-    port = Column(Integer, nullable=False, default=3306)
-    database_name = Column(String(255), nullable=False)
-    schema_name = Column(String(255), nullable=True)
-    username = Column(String(255), nullable=False)
-    password = Column(Text, nullable=False, default="<placeholder>")
-    connection_label = Column(String(100), nullable=False, default="default")
-    is_active = Column(Boolean, default=True)
-    is_default = Column(Boolean, default=False)
-    read_only = Column(Boolean, default=True)
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class DatabaseConnection(Base):

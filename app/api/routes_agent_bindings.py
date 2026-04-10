@@ -12,13 +12,14 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.services.platform.agent_bindings_service import (
     get_agent_llm_bindings,
-    get_agent_database_bindings,
     get_agent_runtime_binding_summary,
     list_agent_runtime_binding_summaries,
     resolve_agent_llm_binding,
     create_or_update_agent_llm_binding,
     validate_agent_llm_binding,
 )
+
+from app.services.platform.agent_database_binding_service import list_agent_bindings
 
 router = APIRouter(prefix="/api/agents", tags=["agent-bindings"])
 
@@ -30,7 +31,7 @@ async def api_get_agent_llm_bindings(agent_id: str, db: Session = Depends(get_db
 
 @router.get("/{agent_id}/database-bindings")
 async def api_get_agent_database_bindings(agent_id: str, db: Session = Depends(get_db)):
-    return {"database_bindings": get_agent_database_bindings(db, agent_id)}
+    return {"database_bindings": list_agent_bindings(db, agent_id)}
 
 
 @router.get("/{agent_id}/llm-binding")

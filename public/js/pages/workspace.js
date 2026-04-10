@@ -869,6 +869,7 @@ async function openCurrentAgentDetailsPanel() {
     // Busca dados detalhados (incluindo database completo) da API
     const res = await fetch(`/api/agents/${agentId}`);
     const d = await res.json();
+    console.log(`[DEBUG] Detalhes do Agente ${agentId} carregados para edição:`, d);
     if (d.ok && d.agent) {
       ag = d.agent;
     }
@@ -947,7 +948,7 @@ async function openCurrentAgentDetailsPanel() {
               </div>
               <div class="config-field">
                 <label>DATABASE</label>
-                <input id="det-db-name" class="input-cfg" value="${escapeAttr(ag.database?.name || '')}" />
+                <input id="det-db-name" class="input-cfg" value="${escapeAttr(ag.database?.name || '')}" placeholder="db_name" />
               </div>
             </div>
             <div class="config-field" style="margin-top:8px">

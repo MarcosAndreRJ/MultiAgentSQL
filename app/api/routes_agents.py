@@ -61,7 +61,7 @@ async def get_agent(agent_id: str):
     agent = await agent_service.get_agent_detail(agent_id)
     if not agent:
         raise HTTPException(status_code=404, detail=f"Agente '{agent_id}' não encontrado")
-    return agent
+    return {"ok": True, "agent": agent}
 
 
 @router.get("/{agent_id}/test-connection")
