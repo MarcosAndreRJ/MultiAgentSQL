@@ -33,8 +33,8 @@ def get_provider_client(provider: db_models.LLMProvider) -> BaseProviderClient:
         return OpenAIProviderClient(api_key=api_key_real, base_url=provider.base_url)
 
     elif p_type == "ollama":
-        # Ollama usa as configurações de URL do provider se existirem
-        return OllamaProviderClient(base_url=provider.base_url)
+        # Ollama usa as configurações de URL e KEY do provider se existirem
+        return OllamaProviderClient(base_url=provider.base_url, api_key=api_key_real)
 
     elif p_type == "gemini":
         api_key_real = api_key_real or settings.GEMINI_API_KEY

@@ -30,16 +30,17 @@ def format_rows(rows: List[Dict], columns: Optional[List[str]] = None, max_rows:
 
     # Header
     header = " | ".join(str(col).ljust(widths[col]) for col in cols)
-    # Separador no formato Header | Header \n ---+---
-    separator = "-+-".join("-" * widths[col] for col in cols)
+    # Separador no formato Header | Header \n ---|---
+    # O frontend renderiza melhor se usarmos o padrão Markdown puro
+    separator = " | ".join("-" * widths[col] for col in cols)
     
     lines = [header, separator]
     for row in display_rows:
-        # Truncar valores muito longos para manter a tabela legível no log/console (o frontend lida com o wrap)
-        line = " | ".join(str(row.get(col, "NULL"))[:50].ljust(widths[col]) for col in cols)
+        # Truncar valores muito longos para manter a tabela legível
+        line = " | ".join(str(row.get(col, "NULL"))[:100].ljust(widths[col]) for col in cols)
         lines.append(line)
 
     if max_rows is not None and len(rows) > max_rows:
-        lines.append(f"... ({len(rows) - max_rows} linhas omitidas)")
+        lines.append(f"\n*... ({len(rows) - max_rows} linhas omitidas para economia de contexto)*")
 
     return "\n".join(lines)

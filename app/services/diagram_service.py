@@ -12,6 +12,10 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 from app.core.logger import get_logger
 from app.core.settings import settings
@@ -25,6 +29,7 @@ from app.schemas.diagram import (
 )
 from app.schemas.digest import DBDigest, TableDigest
 from app.schemas.draft import DiagramDraft, DraftTable
+from app.services import digest_service, diagram_draft_service
 
 logger = get_logger("diagram_service")
 
@@ -49,38 +54,17 @@ def _drafts_path(agent_id: str) -> Path:
     return settings.data_path / "diagram_drafts" / f"{agent_id}.json"
 
 
-def _load_digest(agent_id: str) -> DBDigest:
-    path = _digest_path(agent_id)
-    if not path.exists():
+def _load_digest(agent_id: str, db: Optional[Session] = None) -> DBDigest:
+    digest = digest_service.load_digest(agent_id, db)
+    if not digest:
         raise DiagramDigestNotFoundError(
             "Digest nao encontrado. Gere o digest antes de visualizar a estrutura."
         )
-
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise DiagramDigestInvalidError(
-            "Digest invalido. Gere o digest novamente antes de visualizar a estrutura."
-        ) from exc
-
-    try:
-        return DBDigest.model_validate(raw)
-    except Exception as exc:
-        raise DiagramDigestInvalidError(
-            "Digest invalido. Gere o digest novamente antes de visualizar a estrutura."
-        ) from exc
+    return digest
 
 
-def _load_draft(agent_id: str) -> DiagramDraft | None:
-    path = _drafts_path(agent_id)
-    if not path.exists():
-        return None
-    try:
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        return DiagramDraft.model_validate(raw)
-    except Exception as exc:
-        logger.warning(f"[DIAGRAM] Nao foi possivel carregar draft para '{agent_id}': {exc}")
-        return None
+def _load_draft(agent_id: str, db: Optional[Session] = None) -> DiagramDraft | None:
+    return diagram_draft_service.get_draft(agent_id, db)
 
 
 def _build_node_from_table(table: TableDigest) -> DiagramNode:
@@ -133,15 +117,15 @@ def _build_node_from_draft(draft_table: DraftTable) -> DiagramNode:
     )
 
 
-def build_diagram(agent_id: str, agent_name: str | None = None) -> DiagramPayload:
+def build_diagram(agent_id: str, agent_name: str | None = None, db: Optional[Session] = None) -> DiagramPayload:
     """
     Monta payload de diagrama mesclando:
     1. Tabelas/views reais do digest
-    2. Relacionamentos reais do digest (não inferidos)
+    2. Relacionamentos reais do digest (n\u00E3o inferidos)
     3. Tabelas de rascunho visual do draft (se existirem)
     """
-    digest = _load_digest(agent_id)
-    draft = _load_draft(agent_id)
+    digest = _load_digest(agent_id, db)
+    draft = _load_draft(agent_id, db)
 
     # ── Nós reais ──────────────────────────────────────────────────────────────
     all_real_objects = list(digest.tables) + list(digest.views)
@@ -252,23 +236,21 @@ def build_diagram(agent_id: str, agent_name: str | None = None) -> DiagramPayloa
     )
 
 
-def get_diagram_status(agent_id: str, agent_name: str | None = None) -> DiagramStatus:
+def get_diagram_status(agent_id: str, agent_name: str | None = None, db: Optional[Session] = None) -> DiagramStatus:
     """
     Status do diagrama com base no digest salvo.
     Usa apenas leitura + parse do JSON sem construir o grafo completo.
     """
-    path = _digest_path(agent_id)
-    if not path.exists():
+    try:
+        digest = _load_digest(agent_id, db)
+    except DiagramDigestNotFoundError:
         return DiagramStatus(
             agent_id=agent_id,
             agent_name=agent_name,
             exists=False,
             valid=False,
-            message="Digest nao encontrado. Gere o digest antes de visualizar a estrutura.",
+            message="Digest n\u00E3o encontrado. Gere o digest antes de visualizar a estrutura.",
         )
-
-    try:
-        digest = _load_digest(agent_id)
     except DiagramDigestInvalidError as exc:
         logger.warning(f"[DIAGRAM] digest invalido para '{agent_id}': {exc}")
         return DiagramStatus(

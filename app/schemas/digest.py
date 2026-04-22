@@ -91,6 +91,8 @@ class DigestStatus(BaseModel):
     triggers: int = 0
     procedures: int = 0
     functions: int = 0
+    status_text: Optional[str] = None
+    generating: bool = False
 
 
 # ─── Aliases ───────────────────────────────────────────────────────────────────

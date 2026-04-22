@@ -1,8 +1,8 @@
-"""
+﻿"""
 API Routes: Chat
 POST /api/chat - enviar mensagem para agente
-GET /api/chat/{session_id}/history - histórico da sessão
-DELETE /api/chat/{session_id} - resetar sessão
+GET /api/chat/{session_id}/history - histÃ³rico da sessÃ£o
+DELETE /api/chat/{session_id} - resetar sessÃ£o
 """
 from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
@@ -20,9 +20,13 @@ router = APIRouter(prefix="/api/chat", tags=["chat"])
 async def send_message(msg: ChatMessage, db: Session = Depends(get_db)):
     """Envia mensagem para um agente e recebe resposta."""
     if not msg.message.strip():
-        raise HTTPException(status_code=400, detail="Mensagem não pode estar vazia")
+        raise HTTPException(status_code=400, detail="Mensagem nÃ£o pode estar vazia")
     
-    # Criar session_id se não fornecido
+    # Criar session_id se nÃ£o fornecido
+    # Compat legado: frontend antigo envia conversation_id em vez de session_id
+    if not msg.session_id and msg.conversation_id:
+        msg.session_id = msg.conversation_id
+
     if not msg.session_id:
         import uuid
         msg.session_id = f"sess_{uuid.uuid4().hex[:16]}"
@@ -33,12 +37,12 @@ async def send_message(msg: ChatMessage, db: Session = Depends(get_db)):
 @router.get("/history/{session_id}/{agent_id}")
 async def get_history(session_id: str, agent_id: str):
     """
-    Retorna histórico de mensagens da sessão filtrado por agente.
-    Formato compatível com o frontend: { ok: true, messages: [...] }
+    Retorna histÃ³rico de mensagens da sessÃ£o filtrado por agente.
+    Formato compatÃ­vel com o frontend: { ok: true, messages: [...] }
     """
     session = session_store.get(session_id)
     
-    # Se a sessão não existir, retorna lista vazia (UX amigável para chat novo)
+    # Se a sessÃ£o nÃ£o existir, retorna lista vazia (UX amigÃ¡vel para chat novo)
     if not session:
         return {
             "ok": True,
@@ -48,7 +52,7 @@ async def get_history(session_id: str, agent_id: str):
             "pending_actions": [],
         }
     
-    # Mapear histórico para formato esperado (createdAt em vez de timestamp)
+    # Mapear histÃ³rico para formato esperado (createdAt em vez de timestamp)
     messages = []
     for m in session.history:
         messages.append({
@@ -72,31 +76,31 @@ async def get_history(session_id: str, agent_id: str):
 
 @router.delete("/{session_id}")
 async def reset_session(session_id: str):
-    """Reseta o contexto de uma sessão."""
+    """Reseta o contexto de uma sessÃ£o."""
     session_store.reset(session_id)
     return {"status": "ok", "session_id": session_id}
 
 
 @router.post("/stop")
 async def stop_chat(session_id: str):
-    """Interrompe a geração atual para a sessão."""
+    """Interrompe a geraÃ§Ã£o atual para a sessÃ£o."""
     cancelled = await cancel_message(session_id)
     return {"status": "cancelled" if cancelled else "not_found", "session_id": session_id}
 
 
 @router.get("/events/{session_id}")
 async def event_stream(session_id: str, request: Request):
-    """Stream SSE de eventos de progresso para uma sessão."""
+    """Stream SSE de eventos de progresso para uma sessÃ£o."""
     async def event_generator():
         queue = stream_manager.get_queue(session_id)
         try:
             while True:
-                # Verificar se o cliente ainda está conectado
+                # Verificar se o cliente ainda estÃ¡ conectado
                 if await request.is_disconnected():
                     break
                 
                 try:
-                    # Timeout curto para verificar desconexão periodicamente
+                    # Timeout curto para verificar desconexÃ£o periodicamente
                     event = await asyncio.wait_for(queue.get(), timeout=1.0)
                     yield f"event: message\ndata: {json.dumps(event)}\n\n"
                 except asyncio.TimeoutError:
@@ -107,3 +111,4 @@ async def event_stream(session_id: str, request: Request):
     import asyncio
     import json
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+

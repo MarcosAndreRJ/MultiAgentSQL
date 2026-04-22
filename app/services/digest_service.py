@@ -15,7 +15,10 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
 
 from app.core.logger import get_logger
 from app.core.settings import settings
@@ -32,6 +35,7 @@ from app.schemas.digest import (
     TriggerDigest,
 )
 from app.tools import db_introspection
+from app.db.models import AgentDigest
 
 logger = get_logger("digest_service")
 
@@ -46,9 +50,9 @@ def _md_path(agent_id: str) -> Path:
     return settings.digests_path / f"{agent_id}.digest.md"
 
 
-# ─── API Pública ──────────────────────────────────────────────────────────────
+# ─── API P\u00FAblica ──────────────────────────────────────────────────────────────
 
-def generate_digest(agent: AgentConfig) -> DBDigest:
+def generate_digest(agent: AgentConfig, db: Optional[Session] = None) -> DBDigest:
     """
     Gera digest completo do banco vinculado ao agente e persiste em disco.
     Não usa LLM — usa apenas introspecção real.
@@ -92,6 +96,9 @@ def generate_digest(agent: AgentConfig) -> DBDigest:
 
     _persist_json(digest)
     _persist_md(digest)
+    
+    if db:
+        _persist_to_db(digest, db)
 
     logger.info(
         f"[DIGEST] Concluído | tabelas={summary.tables} | views={summary.views} "
@@ -101,24 +108,49 @@ def generate_digest(agent: AgentConfig) -> DBDigest:
     return digest
 
 
-def load_digest(agent_id: str) -> Optional[DBDigest]:
-    """Carrega digest salvo em disco. Retorna None se não existir."""
+def load_digest(agent_id: str, db: Optional[Session] = None) -> Optional[DBDigest]:
+    """Carrega digest salvo no banco (prioridade) ou disco (fallback)."""
+    # 1. Tenta carregar do banco
+    db_digest: Optional[DBDigest] = None
+    if db:
+        db_digest = _load_from_db(agent_id, db)
+
+    # 2. Tenta carregar do disco
+    disk_digest: Optional[DBDigest] = None
     path = _json_path(agent_id)
-    if not path.exists():
-        return None
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        return DBDigest.model_validate(data)
-    except Exception as e:
-        logger.error(f"[DIGEST] Erro ao carregar digest '{agent_id}': {e}")
-        return None
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            disk_digest = DBDigest.model_validate(data)
+        except Exception as e:
+            logger.warning(f"[DIGEST] Falha ao carregar digest do disco '{agent_id}': {e}")
+
+    # 3. Retorna o mais recente entre BD e disco
+    if db_digest and disk_digest:
+        if disk_digest.generated_at > db_digest.generated_at:
+            logger.debug(f"[DIGEST] Disco mais recente que BD para '{agent_id}'. Usando disco.")
+            return disk_digest
+        return db_digest
+    if db_digest:
+        return db_digest
+    if disk_digest:
+        return disk_digest
+    return None
 
 
-def get_digest_status(agent_id: str) -> DigestStatus:
+def get_digest_status(agent_id: str, db: Optional[Session] = None) -> DigestStatus:
     """Retorna status (existe? quando? quantas tabelas?)"""
-    digest = load_digest(agent_id)
+    digest = load_digest(agent_id, db)
     if not digest:
-        return DigestStatus(agent_id=agent_id, exists=False)
+        return DigestStatus(
+            agent_id=agent_id, 
+            exists=False, 
+            status_text="Digest n\u00E3o gerado."
+        )
+    
+    status_text = f"Digest gerado em {digest.generated_at.strftime('%d/%m/%Y %H:%M')}\n"
+    status_text += f"Estrutura: {digest.summary.tables} tabelas, {digest.summary.views} views, {digest.summary.relationships} relacionamentos."
+    
     return DigestStatus(
         agent_id=agent_id,
         exists=True,
@@ -128,6 +160,7 @@ def get_digest_status(agent_id: str) -> DigestStatus:
         triggers=digest.summary.triggers,
         procedures=digest.summary.procedures,
         functions=digest.summary.functions,
+        status_text=status_text
     )
 
 
@@ -135,11 +168,25 @@ def get_digest_status(agent_id: str) -> DigestStatus:
 
 def _collect_tables(agent: AgentConfig) -> list[TableDigest]:
     result = db_introspection.list_tables(agent)
-    if not result.success or not result.rows:
-        logger.warning(f"[DIGEST] Sem tabelas encontradas: {result.error}")
+    if not result.success:
+        raise ValueError(f"Falha ao listar tabelas: {result.error}")
+    
+    if not result.rows:
+        logger.warning(f"[DIGEST] Nenhuma tabela encontrada no banco '{agent.database.name if agent.database else '?'}'")
+        # Log diagnóstico extra
+        logger.info(f"[DIGEST][DEBUG] Colunas retornadas: {result.columns}")
         return []
 
-    table_names = [list(row.values())[0] for row in result.rows if row]
+    # O SHOW FULL TABLES retorna o nome da tabela na primeira coluna (chave dinâmica 'Tables_in_db')
+    table_names = []
+    for row in result.rows:
+        if not row: continue
+        # Pega o primeiro valor de cada linha (o nome da tabela)
+        name = list(row.values())[0] if isinstance(row, dict) else row[0]
+        if name: table_names.append(name)
+
+    logger.info(f"[DIGEST] Tabelas encontradas: {len(table_names)}")
+    
     digests = []
     for name in table_names:
         td = _build_table_digest(agent, name, "BASE TABLE")
@@ -150,10 +197,16 @@ def _collect_tables(agent: AgentConfig) -> list[TableDigest]:
 
 def _collect_views(agent: AgentConfig) -> list[TableDigest]:
     result = db_introspection.list_views(agent)
-    if not result.success or not result.rows:
+    if not result.success:
+        raise ValueError(f"Falha ao listar views: {result.error}")
+    if not result.rows:
         return []
 
-    view_names = [list(row.values())[0] for row in result.rows if row]
+    view_names = []
+    for row in result.rows:
+        if not row: continue
+        name = list(row.values())[0] if isinstance(row, dict) else row[0]
+        if name: view_names.append(name)
     digests = []
     for name in view_names:
         td = _build_table_digest(agent, name, "VIEW")
@@ -164,7 +217,9 @@ def _collect_views(agent: AgentConfig) -> list[TableDigest]:
 
 def _collect_triggers(agent: AgentConfig) -> list[TriggerDigest]:
     result = db_introspection.list_triggers(agent)
-    if not result.success or not result.rows:
+    if not result.success:
+        raise ValueError(f"Falha ao listar triggers: {result.error}")
+    if not result.rows:
         return []
 
     triggers = []
@@ -180,7 +235,9 @@ def _collect_triggers(agent: AgentConfig) -> list[TriggerDigest]:
 
 def _collect_routines(agent: AgentConfig, action: str) -> list[RoutineDigest]:
     result = db_introspection.introspect(agent, action)
-    if not result.success or not result.rows:
+    if not result.success:
+        raise ValueError(f"Falha em {action}: {result.error}")
+    if not result.rows:
         return []
 
     routines = []
@@ -358,7 +415,50 @@ def _heuristic_description(name: str, columns: list[ColumnInfo], fks: list[Forei
     return ". ".join(parts) if parts else f"Tabela {name}"
 
 
-# ─── Persistência ─────────────────────────────────────────────────────────────
+# ─── Persist\u00EAncia ─────────────────────────────────────────────────────────────
+
+def _persist_to_db(digest: DBDigest, db: Session) -> None:
+    """Persiste ou atualiza o digest no banco MySQL."""
+    try:
+        record = db.query(AgentDigest).filter(AgentDigest.agent_id == digest.agent_id).first()
+        
+        summary_str = json.dumps(digest.summary.model_dump())
+        digest_json = digest.model_dump_json()
+        digest_md = _render_md(digest)
+
+        if record:
+            record.database_name = digest.database
+            record.digest_json = digest_json
+            record.digest_md = digest_md
+            record.summary_json = summary_str
+            record.generated_at = digest.generated_at
+        else:
+            record = AgentDigest(
+                agent_id=digest.agent_id,
+                database_name=digest.database,
+                digest_json=digest_json,
+                digest_md=digest_md,
+                summary_json=summary_str,
+                generated_at=digest.generated_at
+            )
+            db.add(record)
+        
+        db.commit()
+        logger.debug(f"[DIGEST] Persistido no banco MySQL para agente: {digest.agent_id}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"[DIGEST] Erro ao persistir no banco: {e}")
+
+def _load_from_db(agent_id: str, db: Session) -> Optional[DBDigest]:
+    """Recupera digest do banco MySQL."""
+    try:
+        record = db.query(AgentDigest).filter(AgentDigest.agent_id == agent_id).first()
+        if record:
+            data = json.loads(record.digest_json)
+            return DBDigest.model_validate(data)
+    except Exception as e:
+        logger.error(f"[DIGEST] Erro ao carregar do banco '{agent_id}': {e}")
+    return None
 
 def _persist_json(digest: DBDigest) -> None:
     path = _json_path(digest.agent_id)

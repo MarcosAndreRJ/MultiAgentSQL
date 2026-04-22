@@ -1,0 +1,19 @@
+{
+  "agent_id": "agent_b9cc483f",
+  "database": "devhacks_site",
+  "generated_at": "2026-04-15T13:52:57.025521Z",
+  "summary": {
+    "tables": 0,
+    "views": 0,
+    "triggers": 0,
+    "procedures": 0,
+    "functions": 0,
+    "relationships": 0
+  },
+  "tables": [],
+  "views": [],
+  "triggers": [],
+  "procedures": [],
+  "functions": [],
+  "relationships": []
+}

@@ -321,6 +321,14 @@ def reload_agents() -> None:
     logger.info("Agentes recarregados")
 
 
+def clear_agent_cache(agent_id: str) -> None:
+    """Remove um agente específico do cache de instâncias."""
+    global _agent_instances
+    if agent_id in _agent_instances:
+        del _agent_instances[agent_id]
+        logger.info(f"Cache do agente '{agent_id}' invalidado")
+
+
 def _resolve_aliases(agent_id: str, message: str) -> tuple[str, dict[str, str]]:
     """
     Resolve aliases @Token na mensagem usando o AliasService.

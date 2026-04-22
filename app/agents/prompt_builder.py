@@ -19,26 +19,37 @@ logger = get_logger("prompt_builder")
 # ─── Digest Context ────────────────────────────────────────────────────────────
 
 def build_digest_context(
-    agent_id: str,
+    agent: AgentConfig,
     user_message: str,
     resolved_tables: Optional[list[str]] = None,
 ) -> str:
     """
     Constrói o bloco de contexto do digest para o prompt.
-
-    Estratégia:
-    - Sempre injeta um resumo curto (tabelas/views/triggers)
-    - Se a mensagem ou aliases resolvidos citam uma tabela específica,
-      injeta a seção detalhada daquela tabela
-    - Não injeta o digest inteiro (evita inflação de prompt)
+    Se o digest não existir, tenta listar tabelas rapidamente (Lazy Fallback).
     """
     try:
         from app.services.digest_service import load_digest
     except ImportError:
         return ""
 
+    agent_id = agent.id
     digest = load_digest(agent_id)
+
     if not digest:
+        # LAZY FALLBACK: Se não há digest, tenta listar nomes de tabelas reais
+        try:
+            from app.tools import db_introspection
+            res = db_introspection.list_tables(agent)
+            if res.success and res.rows:
+                names = [list(row.values())[0] for row in res.rows if row]
+                return (
+                    f"# CONTEXTO DO BANCO (SCHEMA REAL)\n"
+                    f"**Banco:** `{agent.database.name if agent.database else '?'}`\n"
+                    f"**Tabelas Detectadas:** {', '.join(f'`{n}`' for n in names[:30])}\n"
+                    f"*(Digest completo ainda não gerado)*"
+                )
+        except Exception as e:
+            logger.warning(f"[PROMPT] Falha no lazy digest fallback: {e}")
         return ""
 
     # Resumo sempre incluído (curto)
@@ -256,7 +267,7 @@ def build_full_prompt(
 
     # 3. Contexto do Digest (apenas para agentes com banco de dados)
     if agent.database and agent.type != "principal":
-        digest_ctx = build_digest_context(agent.id, user_message, resolved_tables)
+        digest_ctx = build_digest_context(agent, user_message, resolved_tables)
         if digest_ctx:
             sections.append(digest_ctx)
 
@@ -278,19 +289,33 @@ def build_full_prompt(
 
 def _default_prompt(agent: AgentConfig) -> str:
     """Prompt base padrão quando o arquivo de prompt não é encontrado."""
+    json_instr = (
+        "\n\n### REGRA DE OURO PARA FORMATO DE DADOS\n"
+        "- Se o usuário pedir listagens (tabelas, views, registros, colunas, etc), você DEVE retornar o resultado no campo 'explanation' formatado exclusivamente como uma TABELA MARKDOWN.\n"
+        "- NUNCA use listas com bullet/tópicos para exibir dados do banco.\n\n"
+        "Responda EXCLUSIVAMENTE com um JSON válido no seguinte formato:\n"
+        "{\n"
+        "  \"intent\": \"query|write|ddl|explain|mockdata|unknown\",\n"
+        "  \"needs_tools\": true|false,\n"
+        "  \"tools\": [],\n"
+        "  \"sql\": \"SQL ou null\",\n"
+        "  \"explanation\": \"Explicação/Resultado final\",\n"
+        "  \"risk_hint\": \"low|medium|high\"\n"
+        "}\n"
+        "Nunca adicione texto fora do JSON."
+    )
+
     if agent.type == "principal":
         return (
-            f"Você é {agent.name}, um assistente técnico generalista especializado em MySQL. "
-            "Você não executa comandos em banco de dados. "
-            "Responda de forma técnica, clara e objetiva em português brasileiro."
+            f"Você é {agent.name}, um assistente técnico especializado em MySQL. "
+            "Responda de forma técnica e objetiva em português brasileiro."
+            + json_instr
         )
     else:
         db_name = agent.database.name if agent.database else "desconhecido"
         return (
             f"Você é {agent.name}, um agente especialista MySQL vinculado ao banco '{db_name}'. "
-            "Você é um executor técnico assistido. "
-            "Não invente schema. "
             "Consulte tools antes de afirmar. "
-            "Nunca diga que executou sem retorno real. "
             "Responda em português brasileiro."
+            + json_instr
         )

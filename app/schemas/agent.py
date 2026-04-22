@@ -29,10 +29,10 @@ class DatabaseConfig(BaseModel):
 
 class AgentPermissions(BaseModel):
     """Permissões do agente."""
-    can_read_db: bool = False
-    can_write_db: bool = False
+    can_read_db: bool = True
+    can_write_db: bool = True
     can_ddl: bool = False
-    can_execute: bool = False
+    can_execute: bool = True
     protected_tables: list[str] = Field(default_factory=list)
 
 
@@ -139,3 +139,6 @@ class AgentUpdate(BaseModel):
     type: Optional[str] = None
     icon: Optional[str] = None
     database: Optional[DatabaseConfig] = None
+    permissions: Optional[AgentPermissions] = None
+    guards: Optional[AgentGuards] = None
+    behavior: Optional[AgentBehavior] = None

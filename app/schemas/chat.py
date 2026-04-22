@@ -9,8 +9,9 @@ from pydantic import BaseModel, Field, ConfigDict
 class ChatMessage(BaseModel):
     """Mensagem de entrada do usuário."""
     agent_id: str
-    session_id: str
     message: str
+    session_id: Optional[str] = None
+    conversation_id: Optional[str] = None  # legacy alias (frontend antigo)
     attached_files: list[str] = Field(default_factory=list)
 
 
@@ -22,8 +23,8 @@ class MessageRole(str):
 
 
 class HistoryMessage(BaseModel):
-    """Mensagem no histórico da sessão."""
-    id: Optional[str] = Field(default=None, description="UUID único para a mensagem/evento")
+    """Mensagem no histÃ³rico da sessÃ£o."""
+    id: Optional[str] = Field(default=None, description="UUID Ãºnico para a mensagem/evento")
     role: str  # "user" | "assistant" | "system" | "tool"
     content: str
     type: str = "message"  # "message" | "event"
@@ -63,7 +64,7 @@ class ChatResponse(BaseModel):
 
 
 class Session(BaseModel):
-    """Estado da sessão de um agente."""
+    """Estado da sessÃ£o de um agente."""
     session_id: str
     agent_id: str
     channel: str = "web"

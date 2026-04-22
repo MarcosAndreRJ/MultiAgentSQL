@@ -40,6 +40,7 @@ const state = {
     showThoughtFlow: true,
     typewriterEffect: true,
   },
+  allModels: [], // Armazena cache global de modelos para o picker
 };
 
 // ── Refs para elementos DOM ──────────────────────────────────────
@@ -106,11 +107,19 @@ function buildWorkspaceHTML() {
         <header class="chat-header">
           <div class="chat-header-info">
             <div class="agent-avatar-lg" id="ws-agent-avatar">🧠</div>
-            <div>
-              <div class="agent-name" id="ws-agent-name">Principal</div>
+            <div style="position:relative;">
+              <div class="agent-name" id="ws-agent-name" style="cursor:pointer;" onclick="toggleModelPicker()">Principal</div>
               <div class="agent-status">
                 <span class="status-dot active" id="ws-status-dot"></span>
                 <span id="ws-status-txt">Online</span>
+              </div>
+              
+              <!-- MODEL PICKER POPOVER -->
+              <div id="model-picker-popover" class="model-picker-popover" style="display:none;">
+                <div class="popover-header">Selecionar Modelo</div>
+                <div class="popover-scroll" id="model-picker-list">
+                  <div style="padding:10px;color:var(--muted);font-size:11px;">Carregando modelos...</div>
+                </div>
               </div>
             </div>
           </div>
@@ -212,9 +221,13 @@ function bindEvents() {
   els.btnReset.addEventListener('click', () => sendCommand('/reset'));
   els.btnStop.addEventListener('click', () => sendCommand('/stop'));
   els.btnSkills.addEventListener('click', openSkillsModal);
-  els.btnDetails.addEventListener('click', openCurrentAgentDetailsPanel);
   els.btnConfig.addEventListener('click', openConfigPanel);
   els.btnNewAgent.addEventListener('click', openNewAgentModal);
+  
+  // Detalhes do Agente via Botão de Configuração específico no cabeçalho
+  if (els.btnDetails) {
+    els.btnDetails.onclick = openCurrentAgentDetailsPanel;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -862,27 +875,18 @@ async function openCurrentAgentDetailsPanel() {
   const agentId = state.activeAgent;
   if (!agentId) return;
 
-  // Mostra loading rápido ou busca dados antes de renderizar
   let ag = state.agents.find(a => a.id === agentId);
-  
   try {
-    // Busca dados detalhados (incluindo database completo) da API
-    const res = await fetch(`/api/agents/${agentId}`);
-    const d = await res.json();
-    console.log(`[DEBUG] Detalhes do Agente ${agentId} carregados para edição:`, d);
-    if (d.ok && d.agent) {
-      ag = d.agent;
-    }
-  } catch (e) {
-    console.error("Erro ao buscar detalhes do agente:", e);
-  }
+    const res = await api.getAgent(agentId);
+    if (res.ok && res.agent) ag = res.agent;
+  } catch (e) { console.error("Erro ao carregar detalhes:", e); }
 
-  // Busca modelos para o select
-  let modelOptions = '<option value="">(Automático - Melhor disponível)</option>';
+  let modelOptions = '<option value="">(Autom\u00E1tico - Melhor dispon\u00EDvel)</option>';
   try {
-    const models = await api.getModels();
+    const models = state.allModels.length ? state.allModels : await api.getModels();
+    state.allModels = models;
     models.forEach(m => {
-      const selected = m.model_id === (ag.llmModel || ag.model) ? 'selected' : '';
+      const selected = m.model_id === (ag.model || ag.llm_model) ? 'selected' : '';
       modelOptions += `<option value="${escapeAttr(m.model_id)}" ${selected}>${escapeHtml(m.display_name)} (${m.provider_name})</option>`;
     });
   } catch (e) { console.error("Erro ao carregar modelos:", e); }
@@ -891,195 +895,325 @@ async function openCurrentAgentDetailsPanel() {
   container.className = 'ws-right-panel';
   container.innerHTML = `
     <div class="ws-panel-header">
-      <button id="ws-det-back" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;">←</button>
-      <span style="flex:1;">Configurações do Agente</span>
-      <button id="ws-det-close" style="background:none;border:none;cursor:pointer;color:var(--muted);">✕</button>
+      <button id="ws-det-back" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;">\u2190</button>
+      <span style="flex:1;">Configurar: ${ag.name}</span>
+      <button id="ws-det-close" style="background:none;border:none;cursor:pointer;color:var(--muted);">\u2715</button>
     </div>
+    
     <div class="ws-panel-body">
-      <form class="config-form" id="ws-det-form">
-        <div class="modal-sections">
-          <div class="modal-section">
-            <h5>Identidade</h5>
-            <div class="form-grid">
-              <div class="config-field">
-                <label>NOME</label>
-                <input class="input-cfg" id="det-name" value="${escapeAttr(ag.name)}" ${ag.id === 'main' ? 'disabled' : ''} required />
-              </div>
-              <div class="config-field">
-                <label>TIPO</label>
-                <select id="det-type" class="input-cfg">
-                  <option value="mysql-specialist" ${ag.type === 'mysql-specialist' ? 'selected' : ''}>DBA (MySQL Expert)</option>
-                  <option value="mockdata" ${ag.type === 'mockdata' ? 'selected' : ''}>MockData Service</option>
-                </select>
-              </div>
-            </div>
-          </div>
+      <div class="modal-tabs" id="agent-edit-tabs">
+        <button class="modal-tab active" data-tab="general">Geral</button>
+        <button class="modal-tab" data-tab="security">Seguran\u00A7a</button>
+        <button class="modal-tab" data-tab="behavior">Comportamento</button>
+      </div>
 
-          <div class="modal-section">
-            <h5>Lógica & Modelo</h5>
-            <div class="config-field">
-              <label>CUSTOM PROMPT</label>
-              <textarea class="input-cfg" id="det-desc" rows="10" placeholder="Defina o comportamento do agente...">${escapeHtml(ag.description || '')}</textarea>
+      <form id="ws-det-form" class="agent-tabs-content">
+        <!-- ABA: GERAL -->
+        <div class="tab-pane active" id="edit-pane-general">
+          <div class="modal-section-grid">
+            <div class="form-group">
+              <label class="form-label">NOME</label>
+              <input id="det-name" class="form-input" value="${escapeAttr(ag.name)}" ${ag.id === 'main' ? 'disabled' : ''} />
             </div>
-            <div class="config-field" style="margin-top:8px">
-              <label>MODELO LLM</label>
-              <select id="det-model" class="input-cfg">
-                ${modelOptions}
+            <div class="form-group">
+              <label class="form-label">TIPO</label>
+              <select id="det-type" class="form-input">
+                <option value="mysql-specialist" ${ag.type === 'mysql-specialist' ? 'selected' : ''}>DBA (MySQL Expert)</option>
+                <option value="mockdata" ${ag.type === 'mockdata' ? 'selected' : ''}>MockData Service</option>
               </select>
             </div>
           </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">MODELO LLM</label>
+            <select id="det-model" class="form-input">${modelOptions}</select>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">\u00CDCONE</label>
+            <select id="det-icon" class="form-input">
+              <option value="\uD83E\uDDBE" ${ag.icon === '\uD83E\uDDBE' ? 'selected' : ''}>\uD83E\uDDBE Rob\u00F4</option>
+              <option value="\uD83D\uDEE1\ufe0f" ${ag.icon === '\uD83D\uDEE1\ufe0f' ? 'selected' : ''}>\uD83D\uDEE1\ufe0f Escudo</option>
+              <option value="\uD83E\uDDD9\u200D\u2642\ufe0f" ${ag.icon === '\uD83E\uDDD9\u200D\u2642\ufe0f' ? 'selected' : ''}>\uD83E\uDDD9\u200D\u2642\ufe0f Mago</option>
+              <option value="\uD83D\uDCCA" ${ag.icon === '\uD83D\uDCCA' ? 'selected' : ''}>\uD83D\uDCCA Gr\u00E1fico</option>
+              <option value="\u26A1" ${ag.icon === '\u26A1' ? 'selected' : ''}>\u26A1 Raio</option>
+            </select>
+          </div>
 
-          <div class="modal-section">
-            <h5>Conexão de Banco</h5>
-            <div class="form-grid">
-              <div class="config-field">
-                <label>HOST</label>
-                <input id="det-db-host" class="input-cfg" value="${escapeAttr(ag.database?.host || '')}" placeholder="localhost" />
+          <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+          <h5>Conex\u00E3o de Banco (Target)</h5>
+          <div class="modal-section-grid">
+            <div class="form-group"><label class="form-label">HOST</label><input id="det-db-host" class="form-input" value="${escapeAttr(ag.database?.host || '')}" /></div>
+            <div class="form-group"><label class="form-label">PORTA</label><input id="det-db-port" class="form-input" type="number" value="${ag.database?.port || 3306}" /></div>
+          </div>
+          <div class="modal-section-grid" style="margin-top:10px;">
+            <div class="form-group"><label class="form-label">USU\u00C1RIO</label><input id="det-db-user" class="form-input" value="${escapeAttr(ag.database?.user || '')}" /></div>
+            <div class="form-group"><label class="form-label">DATABASE</label><input id="det-db-name" class="form-input" value="${escapeAttr(ag.database?.name || '')}" /></div>
+          </div>
+          <div class="form-group" style="margin-top:10px;">
+            <label class="form-label">SENHA</label>
+            <input id="det-db-pass" type="password" class="form-input" placeholder="****" />
+          </div>
+        </div>
+
+        <!-- ABA: SEGURAN\u00C7A -->
+        <div class="tab-pane" id="edit-pane-security" style="display:none">
+          <div class="permissions-grid">
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Executar SQL</span>
+                <span class="switch-desc">Permiss\u00E3o geral para envio de comandos ao banco.</span>
               </div>
-              <div class="config-field">
-                <label>PORTA</label>
-                <input id="det-db-port" class="input-cfg" type="number" value="${ag.database?.port || 3306}" />
-              </div>
+              <label class="toggle-switch"><input type="checkbox" id="det-perm-execute" ${ag.permissions?.can_execute ? 'checked' : ''}><span class="toggle-track"></span></label>
             </div>
-            <div class="form-grid" style="margin-top:8px">
-              <div class="config-field">
-                <label>USER</label>
-                <input id="det-db-user" class="input-cfg" value="${escapeAttr(ag.database?.user || '')}" />
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Gravar no Banco</span>
+                <span class="switch-desc">Permite INSERT, UPDATE e DELETE.</span>
               </div>
-              <div class="config-field">
-                <label>DATABASE</label>
-                <input id="det-db-name" class="input-cfg" value="${escapeAttr(ag.database?.name || '')}" placeholder="db_name" />
-              </div>
+              <label class="toggle-switch"><input type="checkbox" id="det-perm-write" ${ag.permissions?.can_write_db ? 'checked' : ''}><span class="toggle-track"></span></label>
             </div>
-            <div class="config-field" style="margin-top:8px">
-              <label>PASSWORD</label>
-              <input id="det-db-pass" type="password" class="input-cfg" placeholder="Deixe em branco para não alterar" />
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Alterar Estrutura (DDL)</span>
+                <span class="switch-desc">Permite ALTER, DROP, TRUNCATE e CREATE.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="det-perm-ddl" ${ag.permissions?.can_ddl ? 'checked' : ''}><span class="toggle-track"></span></label>
+            </div>
+          </div>
+
+          <div class="protected-tables-area" style="margin-top:20px;">
+            <label class="form-label">TABELAS PROTEGIDAS</label>
+            <div class="tag-input-container" id="det-protected-tags">
+              ${(ag.permissions?.protected_tables || []).map(t => `<div class="tag-chip"><span>${t}</span><button type="button">\u00D7</button></div>`).join('')}
+              <input type="text" id="det-tag-input" placeholder="Novo nome..." style="background:none; border:none; color:var(--ink); outline:none; font-size:12px; flex:1; min-width:80px;">
             </div>
           </div>
         </div>
-        
-        <button type="submit" class="btn-save" style="margin-top:20px;">Salvar Alterações</button>
+
+        <!-- ABA: COMPORTAMENTO -->
+        <div class="tab-pane" id="edit-pane-behavior" style="display:none">
+          <div class="form-group">
+            <label class="form-label">LIMITE DE REGISTROS</label>
+            <input id="det-beh-rows" type="number" class="form-input" value="${ag.behavior?.max_result_rows || 500}" />
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">ESTILO DE RESPOSTA</label>
+            <select id="det-beh-style" class="form-input">
+              <option value="technical" ${ag.behavior?.response_style === 'technical' ? 'selected' : ''}>T\u00E9cnico</option>
+              <option value="concise" ${ag.behavior?.response_style === 'concise' ? 'selected' : ''}>Conciso</option>
+              <option value="business" ${ag.behavior?.response_style === 'business' ? 'selected' : ''}>Neg\u00F3cio</option>
+            </select>
+          </div>
+          <div class="switch-field" style="margin-top:12px;">
+             <div class="switch-label">
+                <span class="switch-title">Introspec\u00E7\u00E3o antes de DDL</span>
+                <span class="switch-desc">Agente confirma schema antes de tentar alterar tabelas.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="det-beh-introspect" ${ag.behavior?.introspect_before_ddl ? 'checked' : ''}><span class="toggle-track"></span></label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-save" style="margin-top:25px;">Salvar Altera\u00E7\u00F5es</button>
       </form>
     </div>
   `;
 
   openRightPanel(container);
 
-  container.querySelector('#ws-det-close').addEventListener('click', closeRightPanel);
-  container.querySelector('#ws-det-back').addEventListener('click', closeRightPanel);
-
-  container.querySelector('#ws-det-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = container.querySelector('#det-name').value.trim();
-    const type = container.querySelector('#det-type').value;
-    const description = container.querySelector('#det-desc').value.trim();
-    const llmModel = container.querySelector('#det-model').value.trim();
-    
-    const dbHost = container.querySelector('#det-db-host').value.trim();
-    const dbPort = parseInt(container.querySelector('#det-db-port').value);
-    const dbUser = container.querySelector('#det-db-user').value.trim();
-    const dbName = container.querySelector('#det-db-name').value.trim();
-    const dbPass = container.querySelector('#det-db-pass').value;
-
-    const payload = { 
-      name, 
-      type, 
-      description, 
-      model: llmModel || null 
+  // Tabs logic
+  const tabs = container.querySelectorAll('.modal-tab');
+  const panes = container.querySelectorAll('.tab-pane');
+  tabs.forEach(tab => {
+    tab.onclick = () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panes.forEach(p => p.style.display = 'none');
+      tab.classList.add('active');
+      container.querySelector(`#edit-pane-${tab.dataset.tab}`).style.display = 'block';
     };
+  });
 
-    if (dbHost && dbUser && dbName) {
-      payload.database = {
-        host: dbHost,
-        port: dbPort,
-        user: dbUser,
-        name: dbName,
-        password: dbPass
-      };
+  // Tag Input logic
+  const tagInput = container.querySelector('#det-tag-input');
+  const tagContainer = container.querySelector('#det-protected-tags');
+  tagInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = tagInput.value.trim();
+      if (val) {
+        const chip = document.createElement('div');
+        chip.className = 'tag-chip';
+        chip.innerHTML = `<span>${val}</span><button type="button">\u00D7</button>`;
+        chip.querySelector('button').onclick = () => chip.remove();
+        tagContainer.insertBefore(chip, tagInput);
+        tagInput.value = '';
+      }
     }
+  };
+  tagContainer.querySelectorAll('.tag-chip button').forEach(b => b.onclick = () => b.parentElement.remove());
+
+  container.querySelector('#ws-det-close').onclick = closeRightPanel;
+  container.querySelector('#ws-det-back').onclick = closeRightPanel;
+
+  container.querySelector('#ws-det-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: container.querySelector('#det-name').value.trim(),
+      type: container.querySelector('#det-type').value,
+      model: container.querySelector('#det-model').value || null,
+      icon: container.querySelector('#det-icon').value,
+      database: {
+        host: container.querySelector('#det-db-host').value.trim(),
+        port: parseInt(container.querySelector('#det-db-port').value),
+        user: container.querySelector('#det-db-user').value.trim(),
+        name: container.querySelector('#det-db-name').value.trim(),
+        password: container.querySelector('#det-db-pass').value
+      },
+      permissions: {
+        can_execute: container.querySelector('#det-perm-execute').checked,
+        can_read_db: true,
+        can_write_db: container.querySelector('#det-perm-write').checked,
+        can_ddl: container.querySelector('#det-perm-ddl').checked,
+        protected_tables: Array.from(tagContainer.querySelectorAll('.tag-chip span')).map(s => s.textContent)
+      },
+      behavior: {
+        max_result_rows: parseInt(container.querySelector('#det-beh-rows').value),
+        response_style: container.querySelector('#det-beh-style').value,
+        introspect_before_ddl: container.querySelector('#det-beh-introspect').checked
+      }
+    };
 
     try {
       await api.updateAgent(ag.id, payload);
-      Object.assign(ag, payload);
-      if (state.activeAgent === ag.id) updateCurrentAgent();
-      renderAgentList();
       toast('Agente atualizado com sucesso!', 'success');
-    } catch (err) { 
-      toast(`Erro: ${err.message}`, 'danger'); 
-    }
-  });
+      loadAgents(); // Refresh list
+      closeRightPanel();
+    } catch (err) { toast(`Erro: ${err.message}`, 'danger'); }
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  CRIAR NOVO AGENTE
 // ═══════════════════════════════════════════════════════════════
 async function openNewAgentModal() {
-  // Busca modelos para o select
-  let modelOptions = '<option value="">(Automático - Melhor disponível)</option>';
+  let modelOptions = '<option value="">(Autom\u00E1tico - Melhor dispon\u00EDvel)</option>';
   try {
-    const models = await api.getModels();
+    const models = state.allModels.length ? state.allModels : await api.getModels();
+    state.allModels = models;
     models.forEach(m => {
       modelOptions += `<option value="${escapeAttr(m.model_id)}">${escapeHtml(m.display_name)} (${m.provider_name})</option>`;
     });
   } catch (e) { console.error("Erro ao carregar modelos:", e); }
 
-  const { el: box } = openModal({
-    title: 'Novo Agente Especialista',
+  const { el: box, close: closeModalFn } = openModal({
+    title: 'Configurar Agente Especialista',
     size: 'lg',
     body: `
-      <div class="modal-sections">
-        <div class="modal-section">
-          <h5>Identidade & Propósito</h5>
-          <div class="form-grid">
+      <div class="modal-tabs" id="agent-modal-tabs">
+        <button class="modal-tab active" data-tab="general">Geral</button>
+        <button class="modal-tab" data-tab="security">Seguran\u00E7a</button>
+        <button class="modal-tab" data-tab="behavior">Comportamento</button>
+      </div>
+
+      <div class="agent-tabs-content">
+        <!-- ABA: GERAL -->
+        <div class="tab-pane active" id="pane-general">
+          <div class="modal-section-grid">
             <div class="form-group">
               <label class="form-label">NOME DO AGENTE</label>
-              <input id="new-ag-name" class="form-input" placeholder="Ex: MySQL Expert" required />
+              <input id="ag-name" class="form-input" placeholder="Ex: DBA MasterKey" required />
             </div>
             <div class="form-group">
               <label class="form-label">TIPO</label>
-              <select id="new-ag-type" class="form-input">
+              <select id="ag-type" class="form-input">
                 <option value="mysql-specialist">DBA (MySQL Specialist)</option>
                 <option value="mockdata">MockData Service</option>
               </select>
             </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">PROMPT DE INSTRUÇÕES</label>
-            <textarea id="new-ag-prompt" class="form-input" rows="4" placeholder="Descreva como o agente deve se comportar..."></textarea>
-          </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-top:12px;">
             <label class="form-label">MODELO LLM</label>
-            <select id="new-ag-model" class="form-input">
-              ${modelOptions}
+            <select id="ag-model" class="form-input">${modelOptions}</select>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">\u00CDCONE</label>
+            <select id="ag-icon" class="form-input">
+              <option value="\uD83E\uDDBE">\uD83E\uDDBE Rob\u00F4</option>
+              <option value="\uD83D\uDEE1\ufe0f">\uD83D\uDEE1\ufe0f Escudo</option>
+              <option value="\uD83E\uDDD9\u200D\u2642\ufe0f">\uD83E\uDDD9\u200D\u2642\ufe0f Mago</option>
+              <option value="\uD83D\uDCCA">\uD83D\uDCCA Gr\u00E1fico</option>
+              <option value="\u26A1">\u26A1 Raio</option>
             </select>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+          <h5>Banco de Dados ALVO (Target)</h5>
+          <div class="modal-section-grid">
+            <div class="form-group"><label class="form-label">HOST</label><input id="db-host" class="form-input" placeholder="192.168.0.5" /></div>
+            <div class="form-group"><label class="form-label">PORTA</label><input id="db-port" class="form-input" type="number" value="3306" /></div>
+          </div>
+          <div class="modal-section-grid" style="margin-top:10px;">
+            <div class="form-group"><label class="form-label">USU\u00C1RIO</label><input id="db-user" class="form-input" placeholder="root" /></div>
+            <div class="form-group"><label class="form-label">DATABASE</label><input id="db-name" class="form-input" placeholder="devhacks_site" /></div>
+          </div>
+          <div class="form-group" style="margin-top:10px;">
+            <label class="form-label">SENHA</label>
+            <input id="db-pass" type="password" class="form-input" placeholder="****" />
           </div>
         </div>
 
-        <div class="modal-section">
-          <h5>Conexão de Banco (Opcional)</h5>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">HOST</label>
-              <input id="new-db-host" class="form-input" placeholder="localhost" />
+        <!-- ABA: SEGURAN\u00C7A -->
+        <div class="tab-pane" id="pane-security" style="display:none">
+          <div class="permissions-grid">
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Executar SQL</span>
+                <span class="switch-desc">Permiss\u00E3o geral para envio de comandos ao banco.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="perm-execute" checked><span class="toggle-track"></span></label>
             </div>
-            <div class="form-group">
-              <label class="form-label">PORTA</label>
-              <input id="new-db-port" class="form-input" type="number" value="3306" />
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Gravar no Banco</span>
+                <span class="switch-desc">Permite INSERT, UPDATE e DELETE.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="perm-write" checked><span class="toggle-track"></span></label>
+            </div>
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Alterar Estrutura (DDL)</span>
+                <span class="switch-desc">Permite ALTER, DROP, TRUNCATE e CREATE.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="perm-ddl"><span class="toggle-track"></span></label>
             </div>
           </div>
-          <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">USUÁRIO</label>
-              <input id="new-db-user" class="form-input" placeholder="root" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">DATABASE</label>
-              <input id="new-db-name" class="form-input" placeholder="db_name" />
+
+          <div class="protected-tables-area" style="margin-top:20px;">
+            <label class="form-label">TABELAS PROTEGIDAS (O Agente n\u00E3o poder\u00E1 acessar)</label>
+            <div class="tag-input-container" id="protected-tags">
+              <input type="text" id="tag-input" placeholder="Digite o nome e pressione Enter..." style="background:none; border:none; color:var(--ink); outline:none; font-size:12px; flex:1; min-width:120px;">
             </div>
           </div>
+        </div>
+
+        <!-- ABA: COMPORTAMENTO -->
+        <div class="tab-pane" id="pane-behavior" style="display:none">
           <div class="form-group">
-            <label class="form-label">SENHA</label>
-            <input id="new-db-pass" type="password" class="form-input" placeholder="****" />
+            <label class="form-label">LIMITE DE REGISTROS POR RESPOSTA</label>
+            <input id="beh-rows" type="number" class="form-input" value="500" />
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">ESTILO DE RESPOSTA</label>
+            <select id="beh-style" class="form-input">
+              <option value="technical">T\u00E9cnico e Detalhado</option>
+              <option value="concise">Conciso e Direto</option>
+              <option value="business">Focado em Neg\u00F3cio</option>
+            </select>
+          </div>
+          <div class="switch-field" style="margin-top:12px;">
+             <div class="switch-label">
+                <span class="switch-title">Introspec\u00E7\u00E3o antes de DDL</span>
+                <span class="switch-desc">Agente confirma schema antes de tentar alterar tabelas.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="beh-introspect" checked><span class="toggle-track"></span></label>
           </div>
         </div>
       </div>
@@ -1087,38 +1221,37 @@ async function openNewAgentModal() {
     actions: [
       { label: 'Cancelar', type: 'ghost', onClick: (close) => close() },
       {
-        label: 'Criar Agente',
+        label: 'Salvar Agente',
         type: 'primary',
         onClick: async (close) => {
-          const name = document.getElementById('new-ag-name')?.value.trim();
-          const type = document.getElementById('new-ag-type')?.value;
-          const description = document.getElementById('new-ag-prompt')?.value.trim();
-          const llmModel = document.getElementById('new-ag-model')?.value;
-
-          const dbHost = document.getElementById('new-db-host')?.value.trim();
-          const dbPort = parseInt(document.getElementById('new-db-port')?.value);
-          const dbUser = document.getElementById('new-db-user')?.value.trim();
-          const dbName = document.getElementById('new-db-name')?.value.trim();
-          const dbPass = document.getElementById('new-db-pass')?.value;
-
-          if (!name) return;
+          const name = document.getElementById('ag-name')?.value.trim();
+          if (!name) { toast("Nome \u00E9 obrigat\u00F3rio", "danger"); return; }
 
           const payload = {
             name,
-            type,
-            description,
-            model: llmModel || null
+            type: document.getElementById('ag-type').value,
+            model: document.getElementById('ag-model').value || null,
+            icon: document.getElementById('ag-icon').value,
+            database: {
+              host: document.getElementById('db-host').value.trim(),
+              port: parseInt(document.getElementById('db-port').value),
+              user: document.getElementById('db-user').value.trim(),
+              name: document.getElementById('db-name').value.trim(),
+              password: document.getElementById('db-pass').value
+            },
+            permissions: {
+                can_execute: document.getElementById('perm-execute').checked,
+                can_read_db: true,
+                can_write_db: document.getElementById('perm-write').checked,
+                can_ddl: document.getElementById('perm-ddl').checked,
+                protected_tables: Array.from(document.querySelectorAll('.tag-chip span')).map(s => s.textContent)
+            },
+            behavior: {
+                max_result_rows: parseInt(document.getElementById('beh-rows').value),
+                response_style: document.getElementById('beh-style').value,
+                introspect_before_ddl: document.getElementById('beh-introspect').checked
+            }
           };
-
-          if (dbHost && dbUser && dbName) {
-            payload.database = {
-              host: dbHost,
-              port: dbPort,
-              user: dbUser,
-              name: dbName,
-              password: dbPass
-            };
-          }
 
           try {
             const data = await fetch('/api/agents', {
@@ -1131,18 +1264,46 @@ async function openNewAgentModal() {
               state.agents.push(data.agent);
               state.messagesByAgent[data.agent.id] = [];
               switchAgent(data.agent.id);
-              toast(`Agente "${name}" criado com sucesso!`, 'success');
+              toast(`Agente "${name}" configurado com sucesso!`, 'success');
               close();
             } else {
-              toast(`Falha ao criar agente: ${data.message || 'Erro desconhecido'}`, 'danger');
+              toast(`Erro: ${data.message}`, 'danger');
             }
-          } catch (err) {
-            toast(`Erro de conexão: ${err.message}`, 'danger');
-          }
-        },
-      },
-    ],
+          } catch (err) { toast(`Erro: ${err.message}`, 'danger'); }
+        }
+      }
+    ]
   });
+
+  // LÃ³gica de Abas
+  const tabs = box.querySelectorAll('.modal-tab');
+  const panes = box.querySelectorAll('.tab-pane');
+  tabs.forEach(tab => {
+    tab.onclick = () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panes.forEach(p => p.style.display = 'none');
+      tab.classList.add('active');
+      box.querySelector(`#pane-${tab.dataset.tab}`).style.display = 'block';
+    };
+  });
+
+  // LÃ³gica de Protected Tables (Tag Input)
+  const tagInput = box.querySelector('#tag-input');
+  const tagContainer = box.querySelector('#protected-tags');
+  tagInput.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const val = tagInput.value.trim();
+      if (val) {
+        const chip = document.createElement('div');
+        chip.className = 'tag-chip';
+        chip.innerHTML = `<span>${val}</span><button type="button">\u00D7</button>`;
+        chip.querySelector('button').onclick = () => chip.remove();
+        tagContainer.insertBefore(chip, tagInput);
+        tagInput.value = '';
+      }
+    }
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1200,3 +1361,70 @@ function escapeAttr(str) {
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  MODEL PICKER POPOVER (Restauração)
+// ═══════════════════════════════════════════════════════════════
+window.toggleModelPicker = async function() {
+  const popover = document.getElementById('model-picker-popover');
+  if (!popover) return;
+  
+  if (popover.style.display === 'block') {
+    popover.style.display = 'none';
+    return;
+  }
+  
+  popover.style.display = 'block';
+  const list = document.getElementById('model-picker-list');
+  list.innerHTML = '<div style="padding:10px;color:var(--muted);font-size:11px;">Carregando modelos...</div>';
+
+  try {
+    const models = state.allModels && state.allModels.length ? state.allModels : await api.getModels();
+    state.allModels = models;
+    
+    // Filtro rápido: apenas modelos ativos e disponíveis
+    const filtered = models.filter(m => m.is_available && m.is_active);
+
+    list.innerHTML = filtered.map(m => `
+      <div class="popover-item" onclick="selectModelFromPicker('${escapeAttr(m.model_id)}')">
+        <div style="font-weight:600;">${escapeHtml(m.display_name)}</div>
+        <div style="font-size:10px;color:var(--muted);">${m.provider_name}</div>
+      </div>
+    `).join('');
+    
+    if (!filtered.length) {
+      list.innerHTML = '<div style="padding:10px;color:var(--muted);font-size:11px;">Nenhum modelo disponível.</div>';
+    }
+  } catch (e) {
+    list.innerHTML = '<div style="padding:10px;color:var(--danger);font-size:11px;">Erro ao carregar modelos.</div>';
+  }
+};
+
+window.selectModelFromPicker = async function(modelId) {
+  const agentId = state.activeAgent;
+  if (!agentId) return;
+  
+  try {
+    const ag = state.agents.find(a => a.id === agentId);
+    if (!ag) return;
+    
+    const payload = { model: modelId };
+    await api.updateAgent(agentId, payload);
+    ag.model = modelId;
+    
+    toast(`Modelo alterado para ${modelId}`, 'success');
+    document.getElementById('model-picker-popover').style.display = 'none';
+    updateCurrentAgent();
+  } catch (err) {
+    toast('Erro ao trocar modelo', 'danger');
+  }
+};
+
+// Fechar popover ao clicar fora
+document.addEventListener('mousedown', (e) => {
+  const popover = document.getElementById('model-picker-popover');
+  const nameLabel = document.getElementById('ws-agent-name');
+  if (popover && !popover.contains(e.target) && e.target !== nameLabel) {
+    popover.style.display = 'none';
+  }
+});

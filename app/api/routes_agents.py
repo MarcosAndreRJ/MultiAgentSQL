@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from app.db.session import get_db
 from app.services import agent_service
-from app.services.chat_service import reload_agents
+from app.services.chat_service import reload_agents, clear_agent_cache
 from app.services.platform import agent_governance_service
 from app.services.target_db import query_service
 from app.schemas.agent import AgentCreate, AgentUpdate
@@ -46,6 +46,8 @@ async def update_agent(agent_id: str, payload: AgentUpdate, db: Session = Depend
     """Atualiza as configurações de um agente."""
     try:
         agents = await agent_service.update_agent(agent_id, payload, db)
+        # Limpar cache de instância para forçar re-resolução do modelo LLM
+        clear_agent_cache(agent_id)
         return {"ok": True, "agents": agents}
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))

@@ -8,16 +8,17 @@ DELETE /api/diagram/{agent_id}/drafts/{table_name}
 POST /api/diagram/{agent_id}/execute-ddl
 """
 import re
-
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from sqlalchemy.orm import Session
 
 from app.core import agent_registry
 from app.core.logger import get_logger
 from app.schemas.diagram import DiagramPayload, DiagramStatus
 from app.schemas.draft import AddDraftTableRequest, DiagramDraft, DraftTable
 from app.schemas.execution import DBExecuteRequest
-from app.services import diagram_draft_service, diagram_service
+from app.services import diagram_service, diagram_draft_service
 from app.services.diagram_service import DiagramDigestInvalidError, DiagramDigestNotFoundError
+from app.db.session import get_db
 from app.tools import db_execute
 from pydantic import BaseModel
 
@@ -47,18 +48,24 @@ def _get_agent(agent_id: str):
 # ── Diagram ───────────────────────────────────────────────────────────────────
 
 @router.get("/{agent_id}/status")
-async def get_diagram_status(agent_id: str) -> DiagramStatus:
+async def get_diagram_status(
+    agent_id: str,
+    db: Session = Depends(get_db)
+) -> DiagramStatus:
     """Retorna status de disponibilidade/validade do digest para diagrama."""
     config = _get_agent(agent_id)
-    return diagram_service.get_diagram_status(agent_id=agent_id, agent_name=config.name)
+    return diagram_service.get_diagram_status(agent_id=agent_id, agent_name=config.name, db=db)
 
 
 @router.get("/{agent_id}")
-async def get_diagram(agent_id: str) -> DiagramPayload:
+async def get_diagram(
+    agent_id: str,
+    db: Session = Depends(get_db)
+) -> DiagramPayload:
     """Retorna grafo estrutural mesclando digest real + drafts visuais."""
     config = _get_agent(agent_id)
     try:
-        return diagram_service.build_diagram(agent_id=agent_id, agent_name=config.name)
+        return diagram_service.build_diagram(agent_id=agent_id, agent_name=config.name, db=db)
     except DiagramDigestNotFoundError:
         raise HTTPException(
             status_code=404,
@@ -77,14 +84,21 @@ async def get_diagram(agent_id: str) -> DiagramPayload:
 # ── Drafts ───────────────────────────────────────────────────────────────────
 
 @router.get("/{agent_id}/drafts")
-async def list_drafts(agent_id: str) -> DiagramDraft:
+async def list_drafts(
+    agent_id: str,
+    db: Session = Depends(get_db)
+) -> DiagramDraft:
     """Retorna todos os rascunhos visuais do agente."""
     _get_agent(agent_id)
-    return diagram_draft_service.get_draft(agent_id)
+    return diagram_draft_service.get_draft(agent_id, db=db)
 
 
 @router.post("/{agent_id}/drafts", status_code=201)
-async def add_draft_table(agent_id: str, body: AddDraftTableRequest) -> DraftTable:
+async def add_draft_table(
+    agent_id: str, 
+    body: AddDraftTableRequest,
+    db: Session = Depends(get_db)
+) -> DraftTable:
     """
     Cria ou substitui uma tabela de rascunho no ERD.
     Não toca no banco de dados — apenas persiste o modelo visual.
@@ -101,14 +115,18 @@ async def add_draft_table(agent_id: str, body: AddDraftTableRequest) -> DraftTab
     if len(body.columns) == 0:
         raise HTTPException(status_code=400, detail="A tabela deve ter ao menos uma coluna.")
 
-    return diagram_draft_service.add_table(agent_id, body)
+    return diagram_draft_service.add_table(agent_id, body, db=db)
 
 
 @router.delete("/{agent_id}/drafts/{table_name}", status_code=200)
-async def remove_draft_table(agent_id: str, table_name: str):
+async def remove_draft_table(
+    agent_id: str,
+    table_name: str,
+    db: Session = Depends(get_db)
+):
     """Remove um rascunho de tabela pelo nome."""
     _get_agent(agent_id)
-    removed = diagram_draft_service.remove_table(agent_id, table_name)
+    removed = diagram_draft_service.remove_table(agent_id, table_name, db=db)
     if not removed:
         raise HTTPException(
             status_code=404,
@@ -120,7 +138,11 @@ async def remove_draft_table(agent_id: str, table_name: str):
 # ── Execute DDL ───────────────────────────────────────────────────────────────
 
 @router.post("/{agent_id}/execute-ddl")
-async def execute_ddl(agent_id: str, body: ExecuteDDLRequest):
+async def execute_ddl(
+    agent_id: str,
+    body: ExecuteDDLRequest,
+    db: Session = Depends(get_db)
+):
     """
     Executa um CREATE TABLE no banco vinculado ao agente.
     Aceita apenas DDL CREATE TABLE.
@@ -155,7 +177,7 @@ async def execute_ddl(agent_id: str, body: ExecuteDDLRequest):
 
     # Promover draft (se solicitado) — move tabela do estado visual para real
     if body.promote_draft:
-        promoted = diagram_draft_service.promote_table(agent_id, body.promote_draft)
+        promoted = diagram_draft_service.promote_table(agent_id, body.promote_draft, db=db)
         logger.info(f"[DIAGRAM DDL] Draft promovido={promoted} | tabela={body.promote_draft}")
 
     logger.info(f"[DIAGRAM DDL] CREATE TABLE executado | agente={agent_id}")

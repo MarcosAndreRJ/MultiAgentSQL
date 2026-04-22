@@ -80,31 +80,99 @@ class OpenAIProviderClient(BaseProviderClient):
     async def list_models(self) -> List[Dict[str, Any]]:
         """
         Sincroniza a lista de modelos da OpenAI de forma assíncrona.
+        Se for OpenRouter, filtra e sincroniza EXCLUSIVAMENTE modelos free.
         """
         try:
+            base_url_str = str(self.client.base_url)
+            
+            # ── INTERCEPT EXCLUSIVO PARA OPENROUTER (Filtragem Free) ──
+            if "openrouter.ai" in base_url_str:
+                import httpx
+                headers = {"Authorization": f"Bearer {self._api_key or ''}"}
+                # Garante que não tenha url estourada (evita /models/models)
+                url = base_url_str.rstrip('/')
+                if not url.endswith("/models"):
+                    url = f"{url}/models"
+                    
+                async with httpx.AsyncClient() as client:
+                    resp = await client.get(url, headers=headers)
+                    resp.raise_for_status()
+                    data = resp.json()
+                    
+                models = []
+                for m in data.get("data", []):
+                    pricing = m.get("pricing", {})
+                    try:
+                        p_prompt = float(pricing.get("prompt", -1))
+                        p_comp = float(pricing.get("completion", -1))
+                        is_free = (p_prompt == 0.0 and p_comp == 0.0)
+                    except (ValueError, TypeError):
+                        is_free = False
+                        
+                    if is_free:
+                        models.append({
+                            "id": m.get("id"),
+                            "owned_by": str(m.get("architecture", {}).get("tokenizer", "OpenRouter")),
+                            "created": m.get("created")
+                        })
+                
+                logger.info(f"OpenRouter Sync: Obtidos {len(models)} modelos GRATUITOS exclusivos.")
+                return models
+
+            # ── FLUXO PADRÃO OpenAI / Groq / Outros ──
             response = await self.client.models.list()
             
             models = []
-            for m in response:
-                # ── Defensiva contra variacoes de retorno (objetos vs dicts vs tuples) ──
-                # 1. Tenta atributo (objeto SDK)
-                m_id = getattr(m, 'id', None)
-                owned_by = getattr(m, 'owned_by', None)
-                created = getattr(m, 'created', None)
+            # ── 1. Extração robusta da lista de itens ──
+            items = []
+            
+            # Se for o objeto padrão do SDK (SyncPage), acessamos .data
+            if hasattr(response, "data") and isinstance(response.data, list):
+                items = response.data
+            # Se já for uma lista direta
+            elif isinstance(response, list):
+                items = response
+            # Se for um dicionário (Provedores Custom/Groq as vezes retornam assim se o SDK falha no parse)
+            elif isinstance(response, dict):
+                items = response.get("data", [])
+                if not isinstance(items, list): # Caso não tenha 'data' ou não seja lista
+                    # Se for um dict mas não tem 'data', não iteramos sobre ele para evitar pegar chaves como IDs
+                    items = []
+                    logger.warning(f"Resposta de modelos em formato dict desconhecido: {list(response.keys())}")
+            else:
+                # Tenta iterar apenas se não for um objeto base
+                try:
+                    items = list(response)
+                except:
+                    items = []
 
-                # 2. Tenta chave (dicionário puro)
-                if m_id is None and isinstance(m, dict):
+            for m in items:
+                # ── 2. Defensiva contra variacoes de modelo (objetos vs dicts) ──
+                m_id = None
+                owned_by = None
+                created = None
+
+                if isinstance(m, dict):
                     m_id = m.get('id')
                     owned_by = m.get('owned_by')
                     created = m.get('created')
+                else:
+                    m_id = getattr(m, 'id', None)
+                    owned_by = getattr(m, 'owned_by', None)
+                    created = getattr(m, 'created', None)
                 
-                # 3. Tenta índice (tupla) - caso extremo de driver quebrado
-                if m_id is None and isinstance(m, (tuple, list)) and len(m) > 0:
-                    m_id = m[0] # Assume que o ID é o primeiro elemento
+                # Se ainda nulo, tenta transformacao string (ultimo recurso)
+                if m_id is None and m is not None:
+                    if isinstance(m, str):
+                        m_id = m
 
-                if m_id:
+                if m_id and isinstance(m_id, str):
+                    # Evita lixo técnicos do JSON de alguns provedores
+                    if m_id.lower() in ("data", "object", "list", "model", "page"):
+                        continue
+                        
                     models.append({
-                        "id": str(m_id),
+                        "id": m_id,
                         "owned_by": str(owned_by) if owned_by else None,
                         "created": created
                     })

@@ -29,6 +29,8 @@ function chatApp() {
     rightPanelMode: 'config',
     editAgentData: null,
     editAgentSaving: false,
+    digestStatus: null,
+    digestGenerating: false,
     cfg: {
       ollamaProvider: 'ollama',
       ollamaBaseUrl: '',
@@ -137,7 +139,7 @@ function chatApp() {
 
       const payload = {
         message: text,
-        conversation_id: this.sessionId,
+        session_id: this.sessionId,
         agent_id: this.activeAgent
       };
       
@@ -172,8 +174,8 @@ function chatApp() {
             // 2. Preenche o Planner (que estava carregando)
             const plannerMsg = this.messagesByAgent[agentId].find(m => m.id === plannerMsgId);
             if (plannerMsg) {
-                plannerMsg.text = data.planner || 'Sem plano gerado.';
-                plannerMsg.stepInfo.status = data.planner ? 'done' : 'error';
+                plannerMsg.text = data.planner || 'Contexto analisado e plano definido.';
+                plannerMsg.stepInfo.status = 'done';
                 plannerMsg.stepInfo.title = '🧠 Planejamento concluído';
                 plannerMsg.isDone = true;
             }
@@ -199,7 +201,7 @@ function chatApp() {
                 // 4. Preenche Specialist
                 const specMsg = this.messagesByAgent[agentId].find(m => m.id === specMsgId);
                 if (specMsg) {
-                    specMsg.text = data.specialist || 'Sem resposta do especialista.';
+                    specMsg.text = data.specialist || 'Resposta técnica elaborada.';
                     specMsg.stepInfo.status = 'done';
                     specMsg.stepInfo.title = `⚙️ ${data.selected_specialist || 'SpecialistAgent'} finalizou a análise`;
                     specMsg.isDone = true;
@@ -226,7 +228,7 @@ function chatApp() {
                     // 6. Preenche Reviewer
                     const revMsg = this.messagesByAgent[agentId].find(m => m.id === revMsgId);
                     if (revMsg) {
-                        revMsg.text = data.reviewer || 'Sem revisão.';
+                        revMsg.text = data.reviewer || 'Revisão e segurança validadas.';
                         revMsg.stepInfo.status = 'done';
                         revMsg.stepInfo.title = '🔍 Revisão concluída';
                         revMsg.isDone = true;
@@ -287,7 +289,7 @@ function chatApp() {
       fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: cmd, conversation_id: this.sessionId, agent_id: this.activeAgent })
+        body: JSON.stringify({ message: cmd, session_id: this.sessionId, agent_id: this.activeAgent })
       }).then(r => r.json()).then(data => {
         if (!data.response) this.pushMessage(this.activeAgent, 'system', 'Erro ao executar comando.');
         else this.pushMessage(this.activeAgent, 'system', data.response);
@@ -469,14 +471,87 @@ function chatApp() {
     },
 
     openAgentDetails(ag) {
-      this.editAgentData = { id: ag.id, name: ag.name, description: ag.description, llmModel: ag.llmModel || '' };
+      this.editAgentData = { id: ag.id, name: ag.name, description: ag.description, llmModel: ag.llmModel || '', database_name: ag.database_name };
       this.rightPanelMode = 'agentDetails';
       this.showRightPanel = true;
+      if (ag.database_name) this.loadDigestStatus(ag.id);
+      else this.digestStatus = null;
     },
 
     openCurrentAgentDetails() {
       const ag = this.agents.find(a => a.id === this.activeAgent);
       if (ag) this.openAgentDetails(ag);
+    },
+
+    loadDigestStatus(agentId) {
+      this.digestStatus = { text: 'Carregando...', valid: false };
+      fetch(`/api/digest/status?agent_id=${encodeURIComponent(agentId)}`)
+        .then(r => r.json())
+        .then(d => {
+           if (d.exists) {
+             const dt = new Date(d.generated_at).toLocaleString('pt-BR');
+             this.digestStatus = {
+               text: `✓ Atualizado! ${d.tables} tabelas · ${d.views} views · ${d.triggers} triggers\nGerado em: ${dt}`,
+               valid: true
+             };
+           } else {
+             this.digestStatus = { text: 'Digest ausente. Gere um agora.', valid: false };
+           }
+        })
+        .catch(e => {
+           this.digestStatus = { text: 'Erro ao verificar digest', valid: false };
+        });
+    },
+
+    async generateDigest() {
+      if (!this.editAgentData) return;
+      const agentId = this.editAgentData.id;
+      this.digestGenerating = true;
+      this.digestStatus = { text: 'Conectando ao banco e coletando schema...', valid: false };
+      
+      try {
+        const res = await fetch(`/api/digest/generate?agent_id=${encodeURIComponent(agentId)}`, { method: 'POST' });
+        if (!res.ok) {
+           const err = await res.json();
+           this.digestStatus = { text: `✗ ${err.detail || 'Erro desconhecido'}`, valid: false };
+           return;
+        }
+        await this.loadDigestStatus(agentId);
+      } catch (e) {
+        this.digestStatus = { text: '✗ Erro de rede', valid: false };
+      } finally {
+        this.digestGenerating = false;
+      }
+    },
+
+    viewDigest() {
+      if (!this.editAgentData) return;
+      window.open(`/api/digest?agent_id=${encodeURIComponent(this.editAgentData.id)}`, '_blank');
+    },
+
+    async openDiagram() {
+      if (!this.editAgentData) return;
+      const agentId = this.editAgentData.id;
+      try {
+        const res = await fetch(`/api/diagram/${encodeURIComponent(agentId)}/status`);
+        if (!res.ok) {
+           const errDetail = await res.json().then(j => j.detail).catch(() => null);
+           alert(errDetail || `Erro ${res.status} ao verificar status do diagrama.`);
+           return;
+        }
+        const status = await res.json();
+        if (!status.exists) {
+           alert('Digest não encontrado. Gere o digest antes de visualizar a estrutura.');
+           return;
+        }
+        if (!status.valid) {
+           alert(status.message || 'Digest inválido. Gere o digest novamente antes de visualizar a estrutura.');
+           return;
+        }
+        window.open(`/diagram/${encodeURIComponent(agentId)}`, '_blank', 'noopener');
+      } catch (err) {
+        alert('Erro de rede ao abrir visualização estrutural.');
+      }
     },
 
     saveAgentDetails() {

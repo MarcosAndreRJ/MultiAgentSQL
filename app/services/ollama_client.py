@@ -95,7 +95,7 @@ async def chat_async(
     except httpx.ConnectError:
         logger.error("[OLLAMA ERROR] Não foi possível conectar ao provedor local.")
         raise OllamaError(
-            f"Não foi possível conectar ao Ollama em {settings.OLLAMA_BASE_URL}. "
+            f"Não foi possível conectar ao Ollama em {_base}. "
             "Verifique se o Ollama está rodando."
         )
     except httpx.TimeoutException:
@@ -185,6 +185,41 @@ Responda APENAS o JSON, sem nenhum texto antes ou depois.
     return _parse_llm_plan(response_text)
 
 
+# Ações conhecidas de introspecção de banco
+_INTROSPECT_ACTIONS = {
+    "list_tables", "list_views", "list_triggers", "list_procedures", "list_functions",
+    "describe_table", "show_create_table", "show_create_view", "show_create_trigger",
+    "show_create_procedure", "show_create_function",
+    "get_columns", "get_indexes", "get_foreign_keys", "get_database_info",
+}
+_TOOL_NAMES = {"db_introspect", "db_introspection", "db_execute", "db_mockdata"}
+
+
+def _normalize_tools(raw: list) -> list[dict]:
+    """
+    Normaliza a lista de tools recebida do LLM.
+    Modelos como kimi-k2 às vezes retornam strings no lugar de dicts.
+    Ex: ["list_tables"] → [{"name": "db_introspect", "action": "list_tables", "input": {}}]
+    """
+    normalized = []
+    for item in raw:
+        if isinstance(item, dict):
+            normalized.append(item)
+        elif isinstance(item, str):
+            item = item.strip()
+            if item in _INTROSPECT_ACTIONS:
+                normalized.append({"name": "db_introspect", "action": item, "input": {}})
+                logger.debug(f"[TOOLS_NORMALIZE] String '{item}' convertida para db_introspect action.")
+            elif item in _TOOL_NAMES:
+                normalized.append({"name": item, "action": "", "input": {}})
+                logger.debug(f"[TOOLS_NORMALIZE] String '{item}' convertida para tool name.")
+            else:
+                logger.warning(f"[TOOLS_NORMALIZE] Item de tool desconhecido ignorado: '{item}'")
+        else:
+            logger.warning(f"[TOOLS_NORMALIZE] Item de tool com tipo inválido ignorado: {type(item).__name__}")
+    return normalized
+
+
 def _parse_llm_plan(raw_response: str) -> LLMPlan:
     """
     Faz parse e validação da resposta do LLM.
@@ -233,6 +268,7 @@ def _parse_llm_plan(raw_response: str) -> LLMPlan:
     tools = data.get("tools", [])
     if not isinstance(tools, list):
         tools = []
+    tools = _normalize_tools(tools)
 
     sql = data.get("sql")
     if sql and not isinstance(sql, str):
@@ -242,18 +278,32 @@ def _parse_llm_plan(raw_response: str) -> LLMPlan:
     if not sql:
         sql = None
 
-    explanation = data.get("explanation", "")
+    explanation = data.get("explanation") or ""
     if not isinstance(explanation, str):
         explanation = str(explanation)
 
-    plan = LLMPlan(
-        intent=intent,
-        needs_tools=needs_tools,
-        tools=tools,
-        sql=sql,
-        explanation=explanation,
-        risk_hint=risk_hint,
-    )
+    from pydantic import ValidationError
+    try:
+        plan = LLMPlan(
+            intent=intent,
+            needs_tools=needs_tools,
+            tools=tools,
+            sql=sql,
+            explanation=explanation,
+            risk_hint=risk_hint,
+        )
+    except ValidationError as ve:
+        logger.warning(f"[LLM] Erro de validação no LLMPlan: {ve}")
+        # Retorno seguro com campos obrigatórios preenchidos
+        plan = LLMPlan(
+            intent=intent or "unknown",
+            needs_tools=needs_tools or False,
+            tools=tools or [],
+            sql=sql,
+            explanation=explanation or "",
+            risk_hint=risk_hint or "low"
+        )
+
     logger.info(
         f"[LLM] Plano parseado | intent={intent} | needs_tools={needs_tools} "
         f"| tools={[str(t.get('name', '?')) + '.' + str(t.get('action', '?')) for t in tools]} "
@@ -277,30 +327,44 @@ def _fallback_plan(text: str, raw: str) -> LLMPlan:
     )
 
 
-async def check_connection() -> tuple[bool, str]:
+async def check_connection(base_url: Optional[str] = None, api_key: Optional[str] = None) -> tuple[bool, str]:
     """
     Verifica se Ollama está disponível.
     
     Returns:
         (available, message)
     """
+    _base = base_url or settings.OLLAMA_BASE_URL
+    _api_key = api_key or settings.OLLAMA_CLOUD_API_KEY
+    
+    headers = {}
+    if _api_key:
+        headers["Authorization"] = f"Bearer {_api_key}"
+
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            response = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+        async with httpx.AsyncClient(timeout=5, headers=headers) as client:
+            response = await client.get(f"{_base.rstrip('/')}/api/tags")
             if response.status_code == 200:
                 data = response.json()
                 models = [m["name"] for m in data.get("models", [])]
                 return True, f"Ollama disponível. Modelos: {', '.join(models[:5])}"
             return False, f"Ollama retornou status {response.status_code}"
     except Exception as e:
-        return False, f"Ollama indisponível: {str(e)}"
+        return False, f"Ollama indisponível em {_base}: {str(e)}"
 
 
-async def list_models() -> list[str]:
+async def list_models(base_url: Optional[str] = None, api_key: Optional[str] = None) -> list[str]:
     """Lista modelos disponíveis no Ollama."""
+    _base = base_url or settings.OLLAMA_BASE_URL
+    _api_key = api_key or settings.OLLAMA_CLOUD_API_KEY
+    
+    headers = {}
+    if _api_key:
+        headers["Authorization"] = f"Bearer {_api_key}"
+
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(f"{settings.OLLAMA_BASE_URL}/api/tags")
+        async with httpx.AsyncClient(timeout=10, headers=headers) as client:
+            response = await client.get(f"{_base.rstrip('/')}/api/tags")
             if response.status_code == 200:
                 data = response.json()
                 return [m["name"] for m in data.get("models", [])]

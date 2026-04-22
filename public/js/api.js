@@ -1,4 +1,4 @@
-﻿/**
+/**
  * api.js - Centralized fetch wrapper for FastAPI
  * - Normalizes errors
  * - Injects headers
@@ -43,6 +43,7 @@ export const api = {
 
   // Agents
   getAgents: () => client('/agents'),
+  getAgent: (id) => client(`/agents/${id}`),
   updateAgent: (id, data) => client(`/agents/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   // Providers
@@ -83,6 +84,12 @@ export const api = {
   deleteSkill: (name) => client(`/skills/${name}`, { method: 'DELETE' }),
   assignSkill: (agentId, skillName) => client(`/agents/${agentId}/skills/${skillName}`, { method: 'POST' }),
   removeSkill: (agentId, skillName) => client(`/agents/${agentId}/skills/${skillName}`, { method: 'DELETE' }),
+
+  // Digest & ER
+  getDigestStatus: (agentId) => client(`/digest/status?agent_id=${agentId}`),
+  generateDigest: (agentId) => client(`/digest/generate?agent_id=${agentId}`, { method: 'POST' }),
+  getDigest: (agentId) => client(`/digest/?agent_id=${agentId}`),
+  getDiagramStatus: (agentId) => client(`/diagram/${agentId}/status`),
 };
 
 export const getSentinelSummary = api.getSentinelSummary;

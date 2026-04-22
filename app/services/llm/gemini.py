@@ -211,6 +211,41 @@ class GeminiProvider(LLMProvider):
             return False, str(e)
 
 
+# Ações conhecidas de introspecção de banco
+_INTROSPECT_ACTIONS = {
+    "list_tables", "list_views", "list_triggers", "list_procedures", "list_functions",
+    "describe_table", "show_create_table", "show_create_view", "show_create_trigger",
+    "show_create_procedure", "show_create_function",
+    "get_columns", "get_indexes", "get_foreign_keys", "get_database_info",
+}
+_TOOL_NAMES = {"db_introspect", "db_introspection", "db_execute", "db_mockdata"}
+
+
+def _normalize_tools(raw: list) -> list[dict]:
+    """
+    Normaliza a lista de tools recebida do LLM.
+    Modelos às vezes retornam strings no lugar de dicts.
+    Ex: ["list_tables"] → [{"name": "db_introspect", "action": "list_tables", "input": {}}]
+    """
+    normalized = []
+    for item in raw:
+        if isinstance(item, dict):
+            normalized.append(item)
+        elif isinstance(item, str):
+            item = item.strip()
+            if item in _INTROSPECT_ACTIONS:
+                normalized.append({"name": "db_introspect", "action": item, "input": {}})
+                logger.debug(f"[TOOLS_NORMALIZE] String '{item}' convertida para db_introspect action.")
+            elif item in _TOOL_NAMES:
+                normalized.append({"name": item, "action": "", "input": {}})
+                logger.debug(f"[TOOLS_NORMALIZE] String '{item}' convertida para tool name.")
+            else:
+                logger.warning(f"[TOOLS_NORMALIZE] Item de tool desconhecido ignorado: '{item}'")
+        else:
+            logger.warning(f"[TOOLS_NORMALIZE] Item de tool com tipo inválido ignorado: {type(item).__name__}")
+    return normalized
+
+
 def _parse_gemini_plan(raw_response: str) -> LLMPlan:
     """Faz parse e validação da resposta JSON do Gemini (reutiliza lógica do ollama_client)."""
     if not raw_response or not raw_response.strip():
@@ -248,6 +283,7 @@ def _parse_gemini_plan(raw_response: str) -> LLMPlan:
     tools = data.get("tools", [])
     if not isinstance(tools, list):
         tools = []
+    tools = _normalize_tools(tools)
 
     sql = data.get("sql")
     if sql and not isinstance(sql, str):
@@ -257,23 +293,30 @@ def _parse_gemini_plan(raw_response: str) -> LLMPlan:
     if not sql:
         sql = None
 
-    explanation = data.get("explanation", "")
+    explanation = data.get("explanation") or ""
     if not isinstance(explanation, str):
         explanation = str(explanation)
 
-    logger.info(
-        f"[GEMINI] Plano parseado | intent={intent} | needs_tools={needs_tools} "
-        f"| tools={len(tools)} | risk={risk_hint} | sql_len={len(sql) if sql else 0}"
-    )
-
-    return LLMPlan(
-        intent=intent,
-        needs_tools=needs_tools,
-        tools=tools,
-        sql=sql,
-        explanation=explanation,
-        risk_hint=risk_hint,
-    )
+    from pydantic import ValidationError
+    try:
+        return LLMPlan(
+            intent=intent,
+            needs_tools=needs_tools,
+            tools=tools,
+            sql=sql,
+            explanation=explanation,
+            risk_hint=risk_hint,
+        )
+    except ValidationError as ve:
+        logger.warning(f"[GEMINI] Erro de validação no LLMPlan: {ve}")
+        return LLMPlan(
+            intent=intent or "unknown",
+            needs_tools=needs_tools or False,
+            tools=tools or [],
+            sql=sql,
+            explanation=explanation or "",
+            risk_hint=risk_hint or "low"
+        )
 
 
 def _fallback_plan(text: str) -> LLMPlan:

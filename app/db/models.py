@@ -262,3 +262,25 @@ class SentinelConsistencyScore(Base):
     
     provider = relationship("LLMProvider", foreign_keys=[provider_id])
     model = relationship("LLMModel", foreign_keys=[model_id])
+
+class AgentDigest(Base):
+    """Armazena o digest estruturado (schema) de um agente no banco de dados."""
+    __tablename__ = "agent_digests"
+
+    agent_id = Column(String(100), primary_key=True, index=True)
+    database_name = Column(String(255), nullable=False)
+    digest_json = Column(Text(length=4294967295), nullable=False)  # LONGTEXT — suporta schemas grandes
+    digest_md = Column(Text(length=4294967295), nullable=True)     # LONGTEXT
+    summary_json = Column(String(500), nullable=True) # Resumo (counts)
+    
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class AgentDiagramDraft(Base):
+    """Armazena os rascunhos visuais do diagrama ER (posi\u00E7\u00F5es, layouts)."""
+    __tablename__ = "agent_diagram_drafts"
+
+    agent_id = Column(String(100), primary_key=True, index=True)
+    draft_json = Column(Text, nullable=False)
+    
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

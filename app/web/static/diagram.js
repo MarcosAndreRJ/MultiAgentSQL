@@ -970,10 +970,10 @@ function relayoutGraph() {
     const compNodes = nodes.filter(n => comp.has(n.id));
     const compEdges = edges.filter(e => comp.has(e.from) && comp.has(e.to));
     
-    // Organiza a ilha localmente (BFS-based Layers)
-    const localCoords = computeLayeredLayout(compNodes, compEdges);
+    // Organiza a ilha localmente (Algoritmo Sugiyama via Dagre)
+    const localCoords = computeDagreLayout(compNodes, compEdges);
     
-    // Aplica offsets globais para a ilha
+    // Aplica offsets globais para a ilha (Sistema de Grade para evitar sobreposição de grupos)
     for (const id in localCoords) {
       updates.push({
         id,
@@ -982,21 +982,22 @@ function relayoutGraph() {
       });
     }
 
-    // Calcula dimensões da ilha para a próxima posição na grade
+    // Calcula dimensões reais ocupadas pela ilha para a grade global
     const coordsArr = Object.values(localCoords);
     const minX = Math.min(...coordsArr.map(c => c.x));
     const maxX = Math.max(...coordsArr.map(c => c.x));
     const minY = Math.min(...coordsArr.map(c => c.y));
     const maxY = Math.max(...coordsArr.map(c => c.y));
-    const width = maxX - minX + GROUP_SPACING;
-    const height = maxY - minY + GROUP_SPACING;
+    
+    const w = (maxX - minX) || 0;
+    const h = (maxY - minY) || 0;
 
-    currentGroupX += width;
-    maxColumnHeight = Math.max(maxColumnHeight, height);
+    currentGroupX += w + GROUP_SPACING;
+    maxColumnHeight = Math.max(maxColumnHeight, h);
 
     if (currentGroupX > COLUMN_WIDTH_LIMIT) {
       currentGroupX = 0;
-      currentGroupY += maxColumnHeight;
+      currentGroupY += maxColumnHeight + GROUP_SPACING;
       maxColumnHeight = 0;
     }
   }
@@ -1054,65 +1055,52 @@ function findConnectedComponents(nodes, edges) {
 }
 
 /**
- * Calcula layout de camadas para uma ilha específica usando BFS.
+ * Calcula layout avançado (Dagre/Sugiyama) para uma ilha específica.
  */
-function computeLayeredLayout(nodes, edges) {
-  const adj = {};
-  nodes.forEach(n => adj[n.id] = []);
-  edges.forEach(e => {
-    if (adj[e.from] && adj[e.to]) {
-      adj[e.from].push(e.to); // Direção pretendida: source -> target
-    }
+function computeDagreLayout(nodes, edges) {
+  if (!window.dagre) {
+    console.warn("[ERD] Dagre indisponível, usando layout fallback.");
+    const coords = {};
+    nodes.forEach((n, i) => coords[n.id] = { x: (i%3)*300, y: Math.floor(i/3)*250 });
+    return coords;
+  }
+
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({
+    rankdir: "TB",    // Top to Bottom
+    nodesep: 80,      // Distância horizontal entre nós
+    ranksep: 120,     // Distância vertical entre níveis
+    marginx: 50,
+    marginy: 50
   });
 
-  // Encontra raízes (nós sem arestas de entrada ou maior grau de saída)
-  const inDegree = {};
-  nodes.forEach(n => inDegree[n.id] = 0);
-  edges.forEach(e => { if (inDegree[e.to] !== undefined) inDegree[e.to]++; });
+  g.setDefaultEdgeLabel(() => ({}));
 
-  let roots = nodes.filter(n => inDegree[n.id] === 0).map(n => n.id);
-  if (roots.length === 0) roots = [nodes[0].id];
+  // Adicionar nós à calculadora Dagre
+  nodes.forEach(n => {
+    // Estimativa de largura/altura baseada no conteúdo do nó box
+    const colCount = n.raw?.columns?.length || 0;
+    const estimatedW = 240;
+    const estimatedH = 60 + (colCount > 0 ? Math.min(colCount, 20) * 18 : 30);
+    g.setNode(n.id, { width: estimatedW, height: estimatedH });
+  });
 
-  const levels = {};
-  const queue = roots.map(id => ({id, l:0}));
-  roots.forEach(id => levels[id] = 0);
+  // Adicionar arestas (FKs) para determinar hierarquia
+  edges.forEach(e => {
+    g.setEdge(e.from, e.to);
+  });
 
-  while (queue.length) {
-    const {id, l} = queue.shift();
-    (adj[id] || []).forEach(neighbor => {
-      if (levels[neighbor] === undefined) {
-        levels[neighbor] = l + 1;
-        queue.push({id: neighbor, l: l+1});
-      }
-    });
-  }
+  // Executar o cálculo matemático
+  dagre.layout(g);
 
-  // Fallback para desconectados internos (se houver)
-  nodes.forEach(n => { if (levels[n.id] === undefined) levels[n.id] = 0; });
-
-  // Agrupar por nível
-  const layerGroups = {};
-  for (const id in levels) {
-    const l = levels[id];
-    if (!layerGroups[l]) layerGroups[l] = [];
-    layerGroups[l].push(id);
-  }
-
-  // Atribuir coordenadas
+  // Extrair resultados
   const coords = {};
-  const X_GAP = 280;
-  const Y_GAP = 250;
-
-  for (const l in layerGroups) {
-    const row = layerGroups[l];
-    const rowWidth = (row.length - 1) * X_GAP;
-    row.forEach((id, i) => {
-      coords[id] = {
-        x: i * X_GAP - rowWidth / 2,
-        y: parseInt(l) * Y_GAP
-      };
-    });
-  }
+  g.nodes().forEach(id => {
+    const node = g.node(id);
+    if (node) {
+      coords[id] = { x: node.x, y: node.y };
+    }
+  });
 
   return coords;
 }
@@ -1134,11 +1122,11 @@ function makePhysicsOptions(forRelayout) {
     },
     solver: "barnesHut",
     barnesHut: {
-      gravitationalConstant: -12000,
-      centralGravity: 0.0, // Fundamental para evitar o layout em anel/círculo
-      springLength: 120,
+      gravitationalConstant: -20000,
+      centralGravity: 0.0,
+      springLength: 150,
       springConstant: 0.05,
-      damping: 0.15,
+      damping: 0.09,
       avoidOverlap: 1.0,
     },
     minVelocity: 0.75,

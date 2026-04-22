@@ -360,6 +360,30 @@
             <label>Modelo LLM</label>
             <input type="text" x-model="editAgentData.llmModel" class="input-cfg" placeholder="Deixe em branco para usar o modelo padrão" />
           </div>
+
+          <template x-if="editAgentData.database_name">
+            <div>
+              <div class="config-section-title" style="margin-top:18px">Banco de Dados</div>
+              <div class="config-field">
+                <div style="background:var(--bg-hover); padding:10px; border-radius:6px; font-size:12px; border:1px solid var(--border);">
+                  <div style="font-weight:bold; margin-bottom:4px;" x-text="editAgentData.database_name"></div>
+                  <div x-text="digestStatus ? digestStatus.text : 'Verificando status...'" style="white-space: pre-wrap; margin-bottom:8px; color:var(--text-muted)"></div>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" @click="generateDigest()" class="cmd-btn" style="flex:1" :disabled="digestGenerating">
+                      <span x-text="digestGenerating ? 'Gerando...' : 'Gerar Digest'"></span>
+                    </button>
+                    <button type="button" @click="viewDigest()" class="cmd-btn" style="flex:1" :disabled="!digestStatus || !digestStatus.valid">
+                      Ver Digest
+                    </button>
+                    <button type="button" @click="openDiagram()" class="cmd-btn" style="flex:1; background:rgba(99,91,255,0.1); color:var(--accent)" :disabled="!digestStatus || !digestStatus.valid">
+                      Exibir ER
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
           <button type="submit" class="btn-save" :disabled="editAgentSaving" style="margin-top:auto;">
             <span x-text="editAgentSaving ? 'Salvando...' : 'Salvar Agente'"></span>
           </button>

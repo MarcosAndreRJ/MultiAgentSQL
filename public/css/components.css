@@ -278,13 +278,14 @@ select.input-cfg {
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;
+  color-scheme: dark; /* Força o browser a renderizar dropdowns nativos em modo dark */
 }
 
 /* Fix text contrast in select dropdown native options */
 select.form-input option,
 select.input-cfg option {
-  background-color: var(--input-bg, #1a1d23);
-  color: var(--ink, #fff);
+  background-color: #1a1d23; /* Fundo sólido para garantir contraste no Windows */
+  color: #e2e8f0;            /* Texto quase branco */
 }
 
 textarea.form-input,
@@ -1164,3 +1165,84 @@ textarea.input-cfg {
     width: 64px;
   }
 }
+
+/* ───────────────────────────────────────────────────────────
+   MODAL TABS (Global)
+─────────────────────────────────────────────────────────── */
+.modal-tabs {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+.modal-tab {
+  background: none; border: none;
+  padding: 8px 0;
+  color: var(--ink-2);
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+}
+.modal-tab:hover { color: var(--ink); }
+.modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-pane {
+  display: none;
+}
+.tab-pane.active {
+  display: block;
+}
+
+.permissions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.switch-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+}
+.switch-label {
+  display: flex;
+  flex-direction: column;
+}
+.switch-title { font-size: 12px; font-weight: 600; color: var(--ink); }
+.switch-desc  { font-size: 10px; color: var(--muted); }
+
+.protected-tables-area {
+  margin-top: 15px;
+}
+.tag-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  min-height: 40px;
+}
+.tag-chip {
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tag-chip button {
+  background: none; border: none; color: #fff;
+  cursor: pointer; font-size: 12px; line-height: 1;
+}
+
+/* ─────────────────────────────────────────────────────────── */

@@ -34,8 +34,16 @@ def _build_provider(
     elif name in ("gemini", "google"):
         from app.services.llm.gemini import GeminiProvider
         return GeminiProvider(model=model, timeout=timeout)
+    elif name == "openai":
+        from app.services.llm.openai import OpenAIProvider
+        return OpenAIProvider(
+            model=model, 
+            timeout=timeout,
+            base_url=base_url,
+            api_key=api_key
+        )
     else:
-        raise ValueError(f"Provider desconhecido: '{provider_name}'. Use 'ollama' ou 'gemini'.")
+        raise ValueError(f"Provider desconhecido: '{provider_name}'. Use 'ollama', 'gemini' ou 'openai'.")
 
 
 class FallbackProvider(LLMProvider):

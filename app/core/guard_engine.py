@@ -36,7 +36,7 @@ def evaluate(sql: str, agent: AgentConfig) -> GuardDecision:
             allowed=False,
             requires_confirmation=False,
             risk_level=classification.risk_level,
-            reason="Agente não tem permissão para executar SQL",
+            reason="Agente sem permissão geral de execução. Ative 'Pode Executar SQL' nas configurações.",
             classification=classification,
         )
 
@@ -46,7 +46,7 @@ def evaluate(sql: str, agent: AgentConfig) -> GuardDecision:
             allowed=False,
             requires_confirmation=False,
             risk_level=classification.risk_level,
-            reason="Agente não tem permissão para operações de escrita",
+            reason="Operação de escrita bloqueada. Ative 'Pode Gravar no Banco' para este agente.",
             classification=classification,
         )
 
@@ -55,7 +55,7 @@ def evaluate(sql: str, agent: AgentConfig) -> GuardDecision:
             allowed=False,
             requires_confirmation=False,
             risk_level=classification.risk_level,
-            reason="Agente não tem permissão para operações DDL",
+            reason="Alteração de estrutura (DDL) bloqueada. Ative 'Pode Alterar Estrutura' para este agente.",
             classification=classification,
         )
 

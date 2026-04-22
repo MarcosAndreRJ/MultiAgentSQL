@@ -10,6 +10,7 @@ import json
 from app.db import models as db_models
 from app.core import agent_registry
 from app.core.logger import get_logger
+from app.utils.crypto import decrypt_secret
 
 from app.schemas.agent import (
     AgentConfig, AgentPermissions, AgentGuards, 
@@ -58,62 +59,82 @@ def resolve_full_agent(db: Session, agent_id: str) -> Optional[AgentConfig]:
     if not agent_record:
         return None
     
-    # 1. Resolve LLM Binding (Primário)
-    llm_binding = db.query(db_models.AgentLLMBinding).filter(
-        db_models.AgentLLMBinding.agent_id == agent_id,
-        db_models.AgentLLMBinding.is_primary == True,
-        db_models.AgentLLMBinding.is_active == True
-    ).first()
-    
-    model_name = "llama3" # Fallback super básico
-    llm_config = None
-    if llm_binding:
-        model_name = llm_binding.model.model_identifier
-        llm_config = AgentLLMConfig(
-            provider=llm_binding.provider.provider_type,
-            model=llm_binding.model.model_identifier,
-            base_url=llm_binding.provider.base_url
-        )
-
-    # 2. Resolve Database Config (Privilegia V2, fallback V1)
-    db_config = None
-    
-    # Tenta V2 (normalizado)
-    db_binding_v2 = db.query(db_models.AgentDatabaseBindingV2).filter(
-        db_models.AgentDatabaseBindingV2.agent_id == agent_id,
-        db_models.AgentDatabaseBindingV2.is_active == True
-    ).order_by(db_models.AgentDatabaseBindingV2.is_default.desc()).first()
-    
-    if db_binding_v2:
-        conn = db.query(db_models.DatabaseConnection).filter(db_models.DatabaseConnection.id == db_binding_v2.database_connection_id).first()
-        if conn:
-            db_config = DatabaseConfig(
-                host=conn.host,
-                port=conn.port,
-                name=conn.database_name,
-                user=conn.username,
-                password=conn.password_encrypted
+    try:
+        # 1. Resolve LLM Binding (Primário)
+        llm_binding = db.query(db_models.AgentLLMBinding).filter(
+            db_models.AgentLLMBinding.agent_id == agent_id,
+            db_models.AgentLLMBinding.is_primary == True,
+            db_models.AgentLLMBinding.is_active == True
+        ).first()
+        
+        model_name = "llama3" # Fallback super básico
+        llm_config = None
+        if llm_binding:
+            model_name = llm_binding.model.model_identifier
+            llm_config = AgentLLMConfig(
+                provider=llm_binding.provider.provider_type,
+                model=llm_binding.model.model_identifier,
+                base_url=llm_binding.provider.base_url,
+                api_key=llm_binding.provider.api_key
             )
 
+        # 2. Resolve Database Config (Privilegia V2, fallback V1)
+        db_config = None
+        
+        # Tenta V2 (normalizado)
+        db_binding_v2 = db.query(db_models.AgentDatabaseBindingV2).filter(
+            db_models.AgentDatabaseBindingV2.agent_id == agent_id,
+            db_models.AgentDatabaseBindingV2.is_active == True
+        ).order_by(db_models.AgentDatabaseBindingV2.is_default.desc()).first()
+        
+        if db_binding_v2:
+            conn = db.query(db_models.DatabaseConnection).filter(db_models.DatabaseConnection.id == db_binding_v2.database_connection_id).first()
+            if conn:
+                db_config = DatabaseConfig(
+                    host=conn.host,
+                    port=conn.port,
+                    name=conn.database_name,
+                    user=conn.username,
+                    password=decrypt_secret(conn.password_encrypted)
+                )
 
+        # 3. Resolve Metadata (Permissions, Guards, Behavior, Skills)
+        permissions = AgentPermissions.model_validate_json(agent_record.permissions_json) if agent_record.permissions_json else AgentPermissions()
+        guards = AgentGuards.model_validate_json(agent_record.guards_json) if agent_record.guards_json else AgentGuards()
+        behavior = AgentBehavior.model_validate_json(agent_record.behavior_json) if agent_record.behavior_json else AgentBehavior()
+        skills = json.loads(agent_record.skills_json) if agent_record.skills_json else []
 
-    # 3. Construir AgentConfig (Pydantic)
-    try:
-        return AgentConfig(
-            id=agent_record.id,
+        # Monta o objeto final
+        agent_config = AgentConfig(
+            id=agent_id,
             name=agent_record.name,
-            description=agent_record.description or "",
+            description=agent_record.description,
             type=agent_record.agent_type,
             model=model_name,
-            icon=agent_record.icon or "🤖",
-            prompt_file=agent_record.prompt_file or "base.txt",
-            skills=json.loads(agent_record.skills_json) if agent_record.skills_json else [],
+            icon=agent_record.icon,
+            prompt_file=agent_record.prompt_file,
+            skills=skills,
             database=db_config,
-            permissions=AgentPermissions.model_validate(json.loads(agent_record.permissions_json)) if agent_record.permissions_json else AgentPermissions(),
-            guards=AgentGuards.model_validate(json.loads(agent_record.guards_json)) if agent_record.guards_json else AgentGuards(),
-            behavior=AgentBehavior.model_validate(json.loads(agent_record.behavior_json)) if agent_record.behavior_json else AgentBehavior(),
+            permissions=permissions,
+            guards=guards,
+            behavior=behavior,
             llm=llm_config
         )
+
+        # 4. Trigger de Digest Automático (se não existir)
+        if agent_config.database and agent_config.type != "principal":
+            try:
+                from app.services import digest_service
+                if not digest_service.load_digest(agent_config.id):
+                    logger.info(f"[GOVERNANCE] Digest ausente para '{agent_config.id}'. Disparando geração inicial...")
+                    # Por enquanto síncrono para garantir o primeiro chat, 
+                    # futuramente pode ser um BackgroundTask se demorar.
+                    digest_service.generate_digest(agent_config)
+            except Exception as de:
+                logger.warning(f"[GOVERNANCE] Falha ao disparar digest automático para '{agent_config.id}': {de}")
+
+        return agent_config
+
     except Exception as e:
         logger.error(f"Erro ao validar AgentConfig do banco para '{agent_id}': {e}")
         return None

@@ -22,7 +22,10 @@ class OllamaProviderClient(BaseProviderClient):
         start_time = time.time()
         try:
             # Uso direto do await no serviço assíncrono
-            is_ok, msg = await ollama_client.check_connection()
+            is_ok, msg = await ollama_client.check_connection(
+                base_url=self.base_url, 
+                api_key=self.api_key
+            )
             
             latency = (time.time() - start_time) * 1000
             
@@ -51,7 +54,10 @@ class OllamaProviderClient(BaseProviderClient):
     async def list_models(self) -> List[Dict[str, Any]]:
         """Busca modelos do Ollama de forma assíncrona."""
         try:
-            models = await ollama_client.list_models()
+            models = await ollama_client.list_models(
+                base_url=self.base_url, 
+                api_key=self.api_key
+            )
             return [{"id": m, "name": m} for m in models]
         except Exception as e:
             logger.error(f"Erro ao listar modelos Ollama: {str(e)}")

@@ -193,9 +193,13 @@ class DatabaseAgent(BaseAgent):
             if plan.explanation:
                 session_store.update_context(session.session_id, current_goal=plan.explanation[:200])
 
-            # Se não precisa de tools, responder diretamente com explicação
-            if not plan.needs_tools:
-                self.logger.info("[AGENT] Sem tools, resposta final gerada.")
+            # Se não precisa de tools, responder diretamente assumindo tratar-se apenas de explicação textual.
+            # CASO contrário, se não precisa explicitamente de tools mas fornceceu um SQL (e intent != explain),
+            # nós devemos forçar a continuação para executar esse SQL para não alucinar os dados.
+            has_executable_sql = bool(plan.sql) and plan.intent != "explain"
+
+            if not plan.needs_tools and not has_executable_sql:
+                self.logger.info("[AGENT] Sem tools e sem SQL executável (ou intent=explain), resposta final gerada.")
                 response_text = _format_info_response(plan)
                 session_store.add_message(session.session_id, "assistant", response_text, metadata={"model": self.model})
                 self.logger.info(f"[AGENT] Concluído em {(time.monotonic()-_t0)*1000:.0f}ms")
@@ -217,11 +221,13 @@ class DatabaseAgent(BaseAgent):
                 )
 
             # Executar tools quando necessário
-            tool_results = await self._execute_tools(plan, session, execution_id=execution_id)
+            tool_results = []
+            if plan.needs_tools:
+                tool_results = await self._execute_tools(plan, session, execution_id=execution_id)
 
-            # Se há SQL no plano, processar via guard
+            # Se há SQL no plano (ou extraído das tools), processar via guard
             sql = plan.sql or _extract_sql_from_tools(plan)
-            if sql:
+            if sql and plan.intent != "explain":
                 resp = await self._handle_sql(sql, plan, session, tool_results, run_id=run_id, execution_id=execution_id)
                 resp.model = self.model
                 resp.execution_source = "llm_with_tools"
@@ -545,12 +551,14 @@ def _format_execution_response(sql: str, result, plan: LLMPlan, tool_results: li
         parts.append(f"[ERRO]\n{result.error}")
         parts.append("[STATUS]\nFalhou")
 
-    # Resultados de introspecção (se houver)
+    # Resultados de introspecção (se houver e não houver SQL principal)
+    # Se houver SQL principal, os tool_results de introspecção geralmente são auxiliares
+    # Mas se houver algo relevante, formatamos como tabela também.
     for tr in tool_results:
         r = tr.get("result", {})
         if r.get("success") and r.get("rows") and tr.get("action", "").startswith("list_"):
-            names = [list(row.values())[0] for row in r["rows"][:10] if row]
-            parts.append(f"[INFO - {tr['action']}]\n{', '.join(str(n) for n in names)}")
+            formatted = format_rows(r["rows"], r.get("columns", []))
+            parts.append(f"[INFO - {tr['action']}]\n{formatted}")
 
     return "\n\n".join(parts)
 

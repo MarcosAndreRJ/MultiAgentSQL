@@ -12,6 +12,7 @@ class DBExecuteRequest(BaseModel):
     params: dict = Field(default_factory=dict)
     mode: str = "read"  # "read" | "write" | "ddl"
     dry_run: bool = False
+    execution_id: Optional[str] = None
 
 
 class DBExecuteResult(BaseModel):

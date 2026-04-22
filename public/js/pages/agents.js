@@ -125,15 +125,21 @@ async function openAgentEditModal(ag, onSave) {
     iconOptions += `<option value="${ic}" ${selected}>${ic}</option>`;
   });
 
-  openModal({
+  const modal = openModal({
 
     title: `Editar Agente: ${ag.name}`,
     size: 'lg',
     body: `
-      <div class="modal-sections">
-        <div class="modal-section">
-          <h5>Configuração Básica</h5>
-          <div class="form-grid">
+      <div class="modal-tabs" id="agent-edit-tabs">
+        <button class="modal-tab active" data-tab="general">Geral</button>
+        <button class="modal-tab" data-tab="security">Segurança</button>
+        <button class="modal-tab" data-tab="behavior">Comportamento</button>
+      </div>
+
+      <div class="agent-tabs-content">
+        <!-- ABA: GERAL -->
+        <div class="tab-pane active" id="edit-pane-general">
+          <div class="modal-section-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="form-group">
               <label class="form-label">NOME</label>
               <input id="edit-ag-name" class="form-input" value="${escAttr(ag.name)}" ${ag.id === 'main' ? 'disabled' : ''} required />
@@ -145,29 +151,26 @@ async function openAgentEditModal(ag, onSave) {
                 <option value="mockdata" ${ag.type === 'mockdata' ? 'selected' : ''}>MockData Generator</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label">ÍCONE</label>
-              <select id="edit-ag-icon" class="form-input" style="font-size:1.2rem;">
-                ${iconOptions}
-              </select>
-            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label">CUSTOM PROMPT</label>
-            <textarea id="edit-ag-desc" class="form-input" rows="4" placeholder="Defina o comportamento do agente...">${escHtml(ag.description || '')}</textarea>
-          </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-top:12px;">
             <label class="form-label">MODELO LLM</label>
-            <select id="edit-ag-model" class="form-input">
-              ${modelOptions}
-            </select>
-            <span class="form-hint">O sistema usará o melhor modelo do ranking se deixado em automático.</span>
+            <select id="edit-ag-model" class="form-input">${modelOptions}</select>
+            <span class="form-hint">O sistema usará o melhor modelo se deixado automático.</span>
           </div>
-        </div>
-
-        <div class="modal-section">
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">ÍCONE</label>
+            <select id="edit-ag-icon" class="form-input" style="font-size:1.2rem;">
+              ${iconOptions}
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">CUSTOM PROMPT</label>
+            <textarea id="edit-ag-desc" class="form-input" rows="4">${escHtml(ag.description || '')}</textarea>
+          </div>
+          
+          <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
           <h5>Conexão de Banco (Target DB)</h5>
-          <div class="form-grid">
+          <div class="modal-section-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="form-group">
               <label class="form-label">HOST</label>
               <input id="edit-db-host" class="form-input" value="${escAttr(ag.database?.host || '')}" placeholder="localhost ou IP" />
@@ -177,7 +180,7 @@ async function openAgentEditModal(ag, onSave) {
               <input id="edit-db-port" class="form-input" type="number" value="${ag.database?.port || 3306}" />
             </div>
           </div>
-          <div class="form-grid">
+          <div class="modal-section-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top:10px;">
             <div class="form-group">
               <label class="form-label">USER</label>
               <input id="edit-db-user" class="form-input" value="${escAttr(ag.database?.user || '')}" />
@@ -187,9 +190,72 @@ async function openAgentEditModal(ag, onSave) {
               <input id="edit-db-name" class="form-input" value="${escAttr(ag.database?.name || '')}" />
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-top:10px;">
             <label class="form-label">PASSWORD</label>
-            <input id="edit-db-pass" type="password" class="form-input" value="${escAttr(ag.database?.password || '')}" placeholder="Deixe em branco para não alterar" />
+            <input id="edit-db-pass" type="password" class="form-input" value="${escAttr(ag.database?.password || '')}" placeholder="Mantenha em branco para não alterar" />
+          </div>
+        </div>
+
+        <!-- ABA: SEGURANÇA -->
+        <div class="tab-pane" id="edit-pane-security">
+          <div class="permissions-grid">
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Executar SQL</span>
+                <span class="switch-desc">Permissão geral para envio de comandos ao banco.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="edit-perm-execute" ${ag.permissions?.can_execute !== false ? 'checked' : ''}><span class="toggle-track"></span></label>
+            </div>
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Gravar no Banco</span>
+                <span class="switch-desc">Permite INSERT, UPDATE e DELETE.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="edit-perm-write" ${ag.permissions?.can_write_db !== false ? 'checked' : ''}><span class="toggle-track"></span></label>
+            </div>
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Alterar Estrutura (DDL)</span>
+                <span class="switch-desc">Permite ALTER, DROP, TRUNCATE e CREATE.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="edit-perm-ddl" ${ag.permissions?.can_ddl ? 'checked' : ''}><span class="toggle-track"></span></label>
+            </div>
+          </div>
+
+          <div class="protected-tables-area">
+            <label class="form-label">TABELAS PROTEGIDAS</label>
+            <div class="tag-input-container" id="edit-protected-tags">
+              ${(ag.permissions?.protected_tables || []).map(t => `<div class="tag-chip"><span>${t}</span><button type="button">\u00D7</button></div>`).join('')}
+              <input type="text" id="edit-tag-input" placeholder="Novo nome..." style="background:none; border:none; color:var(--ink); outline:none; font-size:12px; flex:1; min-width:80px;">
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA: COMPORTAMENTO -->
+        <div class="tab-pane" id="edit-pane-behavior">
+          <div class="form-group">
+            <label class="form-label">LIMITE DE REGISTROS</label>
+            <input id="edit-beh-rows" type="number" class="form-input" value="${ag.behavior?.max_result_rows || 500}" />
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">ESTILO DE RESPOSTA</label>
+            <select id="edit-beh-style" class="form-input">
+              <option value="technical" ${ag.behavior?.response_style === 'technical' ? 'selected' : ''}>Técnico / Direto</option>
+              <option value="consultative" ${ag.behavior?.response_style === 'consultative' ? 'selected' : ''}>Consultivo / Explicativo</option>
+              <option value="minimal" ${ag.behavior?.response_style === 'minimal' ? 'selected' : ''}>Minimalista (Só o Código)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">IDIOMA (RESPOSTA)</label>
+            <input id="edit-beh-lang" class="form-input" value="${escAttr(ag.behavior?.language || 'pt-BR')}" />
+          </div>
+          
+          <div class="switch-field" style="margin-top:20px;">
+            <div class="switch-label">
+              <span class="switch-title">Auto-refinamento de Schema</span>
+              <span class="switch-desc">Sempre revisar DDL (schema) antes de comandos não-descritivos.</span>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="edit-beh-intro" ${ag.behavior?.introspect_before_ddl !== false ? 'checked' : ''}><span class="toggle-track"></span></label>
           </div>
         </div>
       </div>
@@ -212,6 +278,20 @@ async function openAgentEditModal(ag, onSave) {
           const dbName = document.getElementById('edit-db-name')?.value.trim();
           const dbPass = document.getElementById('edit-db-pass')?.value;
 
+          const pExecute = document.getElementById('edit-perm-execute')?.checked;
+          const pWrite = document.getElementById('edit-perm-write')?.checked;
+          const pDdl = document.getElementById('edit-perm-ddl')?.checked;
+          
+          const protectedTables = [];
+          document.querySelectorAll('#edit-protected-tags .tag-chip span').forEach(el => {
+            protectedTables.push(el.textContent);
+          });
+
+          const maxRows = parseInt(document.getElementById('edit-beh-rows')?.value || "500");
+          const style = document.getElementById('edit-beh-style')?.value || "technical";
+          const lang = document.getElementById('edit-beh-lang')?.value || "pt-BR";
+          const introspect = document.getElementById('edit-beh-intro')?.checked;
+
           if (!name) return;
           
           const payload = { 
@@ -219,7 +299,21 @@ async function openAgentEditModal(ag, onSave) {
             description, 
             model: llmModel || null,
             type,
-            icon
+            icon,
+            permissions: {
+              can_execute: pExecute,
+              can_write_db: pWrite,
+              can_ddl: pDdl,
+              can_read_db: true,
+              protected_tables: protectedTables
+            },
+            behavior: {
+              max_result_rows: maxRows,
+              response_style: style,
+              language: lang,
+              introspect_before_ddl: introspect,
+              max_loop_steps: 3
+            }
           };
 
           if (dbHost && dbUser && dbName) {
@@ -244,6 +338,46 @@ async function openAgentEditModal(ag, onSave) {
       },
     ],
   });
+
+  if (modal && modal.el) {
+    // Eventos das abas
+    modal.el.querySelectorAll('.modal-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        modal.el.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+        modal.el.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        
+        tab.classList.add('active');
+        modal.el.querySelector('#edit-pane-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Eventos de tags (tabelas)
+    const tagsContainer = modal.el.querySelector('#edit-protected-tags');
+    const tagInput = modal.el.querySelector('#edit-tag-input');
+    
+    if (tagsContainer && tagInput) {
+      tagsContainer.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+          e.target.closest('.tag-chip').remove();
+        }
+      });
+      
+      tagInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          const val = tagInput.value.trim().replace(/,/g, '');
+          if (val) {
+            const chip = document.createElement('div');
+            chip.className = 'tag-chip';
+            chip.innerHTML = `<span>${escHtml(val)}</span><button type="button">×</button>`;
+            tagsContainer.insertBefore(chip, tagInput);
+            tagInput.value = '';
+          }
+        }
+      });
+    }
+  }
 }
 
 async function openNewAgentModal(onSave) {
@@ -264,15 +398,21 @@ async function openNewAgentModal(onSave) {
     iconOptions += `<option value="${ic}">${ic}</option>`;
   });
 
-  openModal({
+  const modal = openModal({
 
     title: 'Novo Agente Especialista',
     size: 'lg',
     body: `
-      <div class="modal-sections">
-        <div class="modal-section">
-          <h5>Configuração de Identidade</h5>
-          <div class="form-grid">
+      <div class="modal-tabs" id="agent-new-tabs">
+        <button class="modal-tab active" data-tab="general">Geral</button>
+        <button class="modal-tab" data-tab="security">Segurança</button>
+        <button class="modal-tab" data-tab="behavior">Comportamento</button>
+      </div>
+
+      <div class="agent-tabs-content">
+        <!-- ABA: GERAL -->
+        <div class="tab-pane active" id="new-pane-general">
+          <div class="modal-section-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="form-group">
               <label class="form-label">NOME DO AGENTE</label>
               <input id="new-ag-name" class="form-input" placeholder="Ex: MySQL Sentinel" required />
@@ -284,28 +424,25 @@ async function openNewAgentModal(onSave) {
                 <option value="mockdata">MockData Service</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label">ÍCONE</label>
-              <select id="new-ag-icon" class="form-input" style="font-size:1.2rem;">
-                ${iconOptions}
-              </select>
-            </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">MODELO LLM</label>
+            <select id="new-ag-model" class="form-input">${modelOptions}</select>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">ÍCONE</label>
+            <select id="new-ag-icon" class="form-input" style="font-size:1.2rem;">
+              ${iconOptions}
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
             <label class="form-label">PROMPT DE INSTRUÇÕES</label>
             <textarea id="new-ag-prompt" class="form-input" rows="4" placeholder="Descreva como o agente deve se comportar..."></textarea>
           </div>
-          <div class="form-group">
-            <label class="form-label">MODELO LLM</label>
-            <select id="new-ag-model" class="form-input">
-              ${modelOptions}
-            </select>
-          </div>
-        </div>
-
-        <div class="modal-section">
+          
+          <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
           <h5>Banco de Dados do Agente (Opcional)</h5>
-          <div class="form-grid">
+          <div class="modal-section-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="form-group">
               <label class="form-label">HOST</label>
               <input id="new-db-host" class="form-input" placeholder="127.0.0.1" />
@@ -315,7 +452,7 @@ async function openNewAgentModal(onSave) {
               <input id="new-db-port" class="form-input" type="number" value="3306" />
             </div>
           </div>
-          <div class="form-grid">
+          <div class="modal-section-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top:10px;">
             <div class="form-group">
               <label class="form-label">USUÁRIO</label>
               <input id="new-db-user" class="form-input" placeholder="root" />
@@ -325,9 +462,64 @@ async function openNewAgentModal(onSave) {
               <input id="new-db-name" class="form-input" placeholder="my_app_db" />
             </div>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-top:10px;">
             <label class="form-label">SENHA</label>
             <input id="new-db-pass" type="password" class="form-input" />
+          </div>
+        </div>
+
+        <!-- ABA: SEGURANÇA -->
+        <div class="tab-pane" id="new-pane-security">
+          <div class="permissions-grid">
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Executar SQL</span>
+                <span class="switch-desc">Permissão geral para envio de comandos ao banco.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="new-perm-execute" checked><span class="toggle-track"></span></label>
+            </div>
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Gravar no Banco</span>
+                <span class="switch-desc">Permite INSERT, UPDATE e DELETE.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="new-perm-write" checked><span class="toggle-track"></span></label>
+            </div>
+            <div class="switch-field">
+              <div class="switch-label">
+                <span class="switch-title">Pode Alterar Estrutura (DDL)</span>
+                <span class="switch-desc">Permite ALTER, DROP, TRUNCATE e CREATE.</span>
+              </div>
+              <label class="toggle-switch"><input type="checkbox" id="new-perm-ddl"><span class="toggle-track"></span></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA: COMPORTAMENTO -->
+        <div class="tab-pane" id="new-pane-behavior">
+          <div class="form-group">
+            <label class="form-label">LIMITE DE REGISTROS</label>
+            <input id="new-beh-rows" type="number" class="form-input" value="500" />
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">ESTILO DE RESPOSTA</label>
+            <select id="new-beh-style" class="form-input">
+              <option value="technical" selected>Técnico / Direto</option>
+              <option value="consultative">Consultivo / Explicativo</option>
+              <option value="minimal">Minimalista (Só o Código)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label class="form-label">IDIOMA (RESPOSTA)</label>
+            <input id="new-beh-lang" class="form-input" value="pt-BR" />
+          </div>
+          
+          <div class="switch-field" style="margin-top:20px;">
+            <div class="switch-label">
+              <span class="switch-title">Auto-refinamento de Schema</span>
+              <span class="switch-desc">Sempre revisar DDL (schema) antes de comandos não-descritivos.</span>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="new-beh-intro" checked><span class="toggle-track"></span></label>
           </div>
         </div>
       </div>
@@ -388,9 +580,24 @@ async function openNewAgentModal(onSave) {
       },
     ],
   });
+
+  if (modal && modal.el) {
+    // Eventos das abas
+    modal.el.querySelectorAll('.modal-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        modal.el.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+        modal.el.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        
+        tab.classList.add('active');
+        modal.el.querySelector('#new-pane-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+  }
 }
 
 async function deleteAgent(ag, onDelete) {
+
   confirmModal({
     title: 'Excluir Agente',
     message: `Excluir o agente <strong>${ag.name}</strong>? Esta ação não pode ser desfeita.`,

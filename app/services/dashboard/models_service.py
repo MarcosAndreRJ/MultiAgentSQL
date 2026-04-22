@@ -1,6 +1,6 @@
 """
-Serviço de Gestão de Modelos de LLM.
-Sincronização com provedores e listagem para o Dashboard.
+ServiÃ§o de GestÃ£o de Modelos de LLM.
+SincronizaÃ§Ã£o com provedores e listagem para o Dashboard.
 """
 from typing import List, Optional
 from sqlalchemy.orm import Session
@@ -37,8 +37,8 @@ async def get_all_models(db: Session, provider_id: Optional[int] = None) -> List
     for m in models:
         provider_name = m.provider.name if m.provider else None
         
-        # Simulação de uso para exibição no Dashboard (Etapa 4.2)
-        # Em produção, isso viria de uma tabela de 'model_usage_metrics'
+        # SimulaÃ§Ã£o de uso para exibiÃ§Ã£o no Dashboard (Etapa 4.2)
+        # Em produÃ§Ã£o, isso viria de uma tabela de 'model_usage_metrics'
         import random
         usage = random.randint(0, m.context_window or 8192) if m.is_active else 0
         limit = m.context_window or 8192
@@ -68,10 +68,10 @@ async def get_all_models(db: Session, provider_id: Optional[int] = None) -> List
 
 async def get_best_available_model(db: Session) -> str:
     """
-    Retorna o identificador do melhor modelo disponível e ativo.
-    Heurística:
+    Retorna o identificador do melhor modelo disponÃ­vel e ativo.
+    HeurÃ­stica:
     1. Filtra por is_active=True e is_available=True
-    2. Ordena por context_window DESC (preferência por modelos mais potentes)
+    2. Ordena por context_window DESC (preferÃªncia por modelos mais potentes)
     3. Fallback para 'llama3' (ollama default)
     """
     model = db.query(LLMModel).filter(
@@ -83,18 +83,18 @@ async def get_best_available_model(db: Session) -> str:
         logger.info(f"Selecionado melhor modelo: {model.model_identifier} (win: {model.context_window})")
         return model.model_identifier
     
-    logger.warning("Nenhum modelo ativo/disponível encontrado. Usando fallback 'llama3'")
+    logger.warning("Nenhum modelo ativo/disponÃ­vel encontrado. Usando fallback 'llama3'")
     return "llama3"
 
 
 async def get_models_catalog(db: Session) -> List[ProviderCatalogRead]:
     """
-    Retorna o catálogo de modelos agrupado por provider.
+    Retorna o catÃ¡logo de modelos agrupado por provider.
     Dados puros (JSON), sem HTML.
     """
     providers = db.query(LLMProvider).filter(LLMProvider.is_active == True).all()
     
-    # Se não houver modelos, tenta sync
+    # Se nÃ£o houver modelos, tenta sync
     model_count = db.query(LLMModel).count()
     if model_count == 0 and len(providers) > 0:
         await sync_all_active_providers(db)
@@ -132,7 +132,7 @@ async def get_models_catalog(db: Session) -> List[ProviderCatalogRead]:
 
 async def sync_provider_models(db: Session, provider_id: int):
     """
-    Sincroniza os modelos técnicos de um provedor usando seu adapter.
+    Sincroniza os modelos tÃ©cnicos de um provedor usando seu adapter.
     """
     from datetime import datetime
     provider = db.query(LLMProvider).filter(LLMProvider.id == provider_id).first()
@@ -142,11 +142,20 @@ async def sync_provider_models(db: Session, provider_id: int):
     logger.info(f"Sincronizando modelos para provider {provider.name} (ID: {provider.id})")
     try:
         client = get_provider_client(provider)
-        external_models = client.list_models() # Retorna lista de dicts: id, name, capabilities
+        external_models = await client.list_models() # Retorna lista de dicts: id, name, capabilities
         
         synced_ids = []
         for ext_m in external_models:
-            model_id = ext_m["id"]
+            if not isinstance(ext_m, dict):
+                continue
+
+            model_id = ext_m.get("id")
+            if not isinstance(model_id, str):
+                continue
+            model_id = model_id.strip()
+            if not model_id or model_id.lower() in {"data", "object", "list"}:
+                continue
+
             synced_ids.append(model_id)
             
             existing = db.query(LLMModel).filter(
@@ -154,7 +163,7 @@ async def sync_provider_models(db: Session, provider_id: int):
                 LLMModel.model_identifier == model_id
             ).first()
             
-            # Extrai capacidades se disponível no client
+            # Extrai capacidades se disponÃ­vel no client
             caps = ext_m.get("capabilities", {})
             
             if existing:
@@ -182,7 +191,7 @@ async def sync_provider_models(db: Session, provider_id: int):
                 )
                 db.add(new_model)
         
-        # Marca como indisponíveis modelos que não vieram no sync
+        # Marca como indisponÃ­veis modelos que nÃ£o vieram no sync
         db.query(LLMModel).filter(
             LLMModel.provider_id == provider_id,
             ~LLMModel.model_identifier.in_(synced_ids),
@@ -204,6 +213,19 @@ async def sync_all_active_providers(db: Session):
 
 async def bootstrap_models(db: Session):
     """
-    Garante que os modelos mínimos existam.
+    Garante que os modelos mínimos existam e limpa lixo técnico.
     """
+    # 1. Limpeza de modelos inválidos que podem ter sido sincronizados erroneamente no passado
+    invalid_ids = ["data", "object", "list", "model", "page"]
+    try:
+        deleted = db.query(LLMModel).filter(LLMModel.model_identifier.in_(invalid_ids)).delete(synchronize_session=False)
+        if deleted > 0:
+            db.commit()
+            logger.info(f"Limpeza de Bootstrap: {deleted} modelos inválidos removidos.")
+    except Exception as e:
+        db.rollback()
+        logger.warning(f"Falha na limpeza de modelos no bootstrap: {e}")
+
+    # 2. Sync real com os providers ativos
     await sync_all_active_providers(db)
+

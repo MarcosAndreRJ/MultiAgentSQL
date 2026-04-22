@@ -22,6 +22,20 @@ from app.services.sentinel.scheduler_service import start_sentinel
 logger = get_logger("app")
 
 
+# Patch para garantir que o Windows sirva arquivos estáticos com charset UTF-8
+
+# Patch para garantir que o Windows sirva arquivos estáticos com charset UTF-8
+# Sem isso, navegadores podem interpretar emojis e acentos como Windows-1252/ISO-8859-1
+import mimetypes
+mimetypes.add_type('application/javascript', '.js')
+mimetypes.add_type('text/css', '.css')
+mimetypes.add_type('text/html', '.html')
+mimetypes.types_map['.js'] = 'application/javascript; charset=utf-8'
+mimetypes.types_map['.css'] = 'text/css; charset=utf-8'
+mimetypes.types_map['.html'] = 'text/html; charset=utf-8'
+
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Bootstrap e shutdown do runtime."""
@@ -76,6 +90,17 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+# Patch de Middleware para forçar charset UTF-8 em arquivos estáticos (.js, .css, .html)
+# Isso resolve o problema de caracteres corrompidos no Windows/FastAPI
+@app.middleware("http")
+async def add_charset_middleware(request: Request, call_next):
+    response = await call_next(request)
+    content_type = response.headers.get("Content-Type", "")
+    # Se for um arquivo estático conhecido e não tiver charset, injeta UTF-8
+    if any(m in content_type for m in ["javascript", "css", "html"]) and "charset" not in content_type:
+        response.headers["Content-Type"] = f"{content_type}; charset=utf-8"
+    return response
 
 app.add_middleware(
     CORSMiddleware,

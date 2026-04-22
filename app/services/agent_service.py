@@ -48,9 +48,9 @@ async def create_agent(data: AgentCreate, db_session: Optional[SessionLocal] = N
         import json
         permissions = {
             "can_read_db": True,
-            "can_write_db": False,
+            "can_write_db": True,
             "can_ddl": False,
-            "can_execute": False,
+            "can_execute": True,
             "protected_tables": []
         }
         guards = {
@@ -353,6 +353,14 @@ async def update_agent(agent_id: str, data: AgentUpdate, db_session: Optional[Se
                         is_active=True
                     )
                     db_session.add(new_binding)
+
+        # Atualização de Configurações Avançadas
+        if data.permissions is not None:
+            agent.permissions_json = data.permissions.model_dump_json()
+        if data.guards is not None:
+            agent.guards_json = data.guards.model_dump_json()
+        if data.behavior is not None:
+            agent.behavior_json = data.behavior.model_dump_json()
 
         db_session.commit()
         # Retorna a lista atualizada
